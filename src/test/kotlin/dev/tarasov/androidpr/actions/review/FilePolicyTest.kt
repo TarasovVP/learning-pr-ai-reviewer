@@ -5,6 +5,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_TWO_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,6 +22,8 @@ class FilePolicyTest {
         assertFalse(FilePolicy.isAllowed("config/secrets.properties"))
         assertTrue(FilePolicy.isAllowed("feature/SecretaryScreen.kt"))
         assertTrue(FilePolicy.isAllowed(".gitignore"))
+        assertTrue(FilePolicy.isAllowed("security/AndroidKeystoreCipher.kt"))
+        assertFalse(FilePolicy.isAllowed("config/keystore.properties"))
     }
 
     @Test
@@ -69,6 +72,18 @@ class FilePolicyTest {
         assertTrue(FilePolicy.isModuleContext("app/src/debug/res/xml/network_security_config.xml", MODULE_FOUR_ID))
         assertTrue(FilePolicy.isModuleContext("app/src/test/UserRepositoryImplTest.kt", MODULE_FOUR_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_FOUR_ID))
+    }
+
+    @Test
+    fun `recognizes module five security storage manifest and workflow context`() {
+        assertTrue(FilePolicy.isModuleContext("app/src/main/AndroidManifest.xml", MODULE_FIVE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/res/xml/backup_rules.xml", MODULE_FIVE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_FIVE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/security/TinkNoteCipher.kt", MODULE_FIVE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/test/PlaintextNoteMigrationTest.kt", MODULE_FIVE_ID))
+        assertTrue(FilePolicy.isModuleContext(".github/workflows/signed-release.yml", MODULE_FIVE_ID))
+        assertTrue(FilePolicy.isModuleContext("docs/security-review.md", MODULE_FIVE_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/feature/users/UserListScreen.kt", MODULE_FIVE_ID))
     }
 
     @Test

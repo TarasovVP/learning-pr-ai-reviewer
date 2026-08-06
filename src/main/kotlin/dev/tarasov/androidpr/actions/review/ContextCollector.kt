@@ -9,6 +9,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_TWO_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 
 class ContextCollector(
     private val github: GitHubService,
@@ -60,6 +61,7 @@ object FilePolicy {
     private val sensitiveBaseNames = setOf(SECRET, SECRETS, CREDENTIAL, CREDENTIALS)
     private val sensitiveFragments =
         setOf(KEYSTORE, PRIVATE_KEY_DASH, PRIVATE_KEY_UNDERSCORE, POSTMAN_ENVIRONMENT)
+    private val potentiallySensitiveConfigExtensions = setOf(PROPERTIES, JSON, YAML, YML)
     private val moduleThreeFileNames = setOf(
         "userlistscreen.kt",
         "userlistviewmodel.kt",
@@ -175,6 +177,43 @@ object FilePolicy {
         CHARLES,
         RETROFIT,
     )
+    private val moduleFiveExactPaths = setOf(
+        ROOT_BUILD_GRADLE,
+        APP_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+        GITIGNORE,
+    )
+    private val moduleFiveFileNames = setOf(
+        APP_MANIFEST,
+        APP_MODULE,
+        ENTITIES,
+        USER_DAO,
+        USER_DATABASE,
+        ROOM_USER_LOCAL_SOURCE,
+        AUTH_SESSION_REPOSITORY,
+        AUTH_TOKEN_HOLDER,
+        PREFERENCES_DATA_STORES,
+        QUALITY_TEST_RECEIVER,
+        USER_SYNC_WORKER,
+    )
+    private val moduleFivePathFragments = setOf(
+        SECURITY,
+        CRYPTO,
+        TINK,
+        KEYSTORE,
+        AEAD,
+        ENCRYPT,
+        BACKUP,
+        NETWORK_SECURITY,
+        NETWORK_SECURITY_UNDERSCORE,
+        LOGGING,
+        SIGNING,
+        GITHUB_WORKFLOWS_PATH,
+        DATA_LOCAL_PATH,
+        AUTH_PATH,
+        MIGRATION,
+    )
 
     fun isAllowed(path: String): Boolean {
         val normalized = path.lowercase()
@@ -186,7 +225,7 @@ object FilePolicy {
         if (name !in explicitlyAllowedNames && extension !in allowedExtensions) return false
         if (segments.any { it in forbiddenSegments }) return false
         if (baseName in sensitiveBaseNames) return false
-        if (sensitiveFragments.any(normalized::contains)) return false
+        if (extension in potentiallySensitiveConfigExtensions && sensitiveFragments.any(normalized::contains)) return false
         return true
     }
 
@@ -195,6 +234,7 @@ object FilePolicy {
         MODULE_TWO_ID -> isModuleTwoContext(path)
         MODULE_THREE_ID -> isModuleThreeContext(path)
         MODULE_FOUR_ID -> isModuleFourContext(path)
+        MODULE_FIVE_ID -> isModuleFiveContext(path)
         else -> false
     }
 
@@ -226,6 +266,13 @@ object FilePolicy {
         val name = normalized.substringAfterLast(PATH_SEPARATOR)
         if (normalized in moduleFourExactPaths || name in moduleFourFileNames) return true
         return moduleFourPathFragments.any(normalized::contains)
+    }
+
+    private fun isModuleFiveContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleFiveExactPaths || name in moduleFiveFileNames) return true
+        return moduleFivePathFragments.any(normalized::contains)
     }
 
     private const val KT = "kt"
@@ -340,6 +387,24 @@ object FilePolicy {
     private const val DATA_REMOTE_PATH = "/data/remote/"
     private const val CHARLES = "charles"
     private const val RETROFIT = "retrofit"
+    private const val ENTITIES = "entities.kt"
+    private const val USER_DAO = "userdao.kt"
+    private const val USER_DATABASE = "userdatabase.kt"
+    private const val ROOM_USER_LOCAL_SOURCE = "roomuserlocaldatasource.kt"
+    private const val AUTH_TOKEN_HOLDER = "authtokenholder.kt"
+    private const val PREFERENCES_DATA_STORES = "preferencesdatastores.kt"
+    private const val USER_SYNC_WORKER = "usersyncworker.kt"
+    private const val SECURITY = "security"
+    private const val CRYPTO = "crypto"
+    private const val TINK = "tink"
+    private const val AEAD = "aead"
+    private const val ENCRYPT = "encrypt"
+    private const val BACKUP = "backup"
+    private const val LOGGING = "logging"
+    private const val GITHUB_WORKFLOWS_PATH = ".github/workflows/"
+    private const val DATA_LOCAL_PATH = "/data/local/"
+    private const val AUTH_PATH = "/auth"
+    private const val MIGRATION = "migration"
     private const val EMPTY = ""
     private const val UNDERSCORE = "_"
     private const val PATH_SEPARATOR = '/'
