@@ -1,0 +1,37 @@
+name: Android PR AI Review
+
+on:
+  pull_request_target:
+    types: [ready_for_review]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ready-for-review:
+    if: github.event_name == 'pull_request_target'
+    uses: TarasovVP/android-pr-ai-reviewer-actions/.github/workflows/reusable-review.yml@main
+    with:
+      repository: ${{ github.repository }}
+      pr_number: ${{ github.event.pull_request.number }}
+      trigger: ready_for_review
+      requested_by: ${{ github.actor }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+  manual-review:
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      github.event.comment.body == '/ai-review'
+    uses: TarasovVP/android-pr-ai-reviewer-actions/.github/workflows/reusable-review.yml@main
+    with:
+      repository: ${{ github.repository }}
+      pr_number: ${{ github.event.issue.number }}
+      trigger: manual
+      requested_by: ${{ github.actor }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

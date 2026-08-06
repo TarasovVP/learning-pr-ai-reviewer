@@ -1,0 +1,11 @@
+.gradle/
+.kotlin/
+build/
+.idea/
+*.iml
+.env
+local.properties
+*.pem
+*.key
+secrets/
+gradle/gradle-daemon-jvm.properties
