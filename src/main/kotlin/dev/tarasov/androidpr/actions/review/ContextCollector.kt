@@ -6,6 +6,7 @@ import dev.tarasov.androidpr.actions.domain.ReviewContext
 import dev.tarasov.androidpr.actions.domain.SourceFile
 import dev.tarasov.androidpr.actions.github.GitHubService
 import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_TWO_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 
 class ContextCollector(
@@ -110,6 +111,36 @@ object FilePolicy {
         DELIVERY,
         MODULARIZATION,
     )
+    private val moduleTwoExactPaths = setOf(
+        SETTINGS_GRADLE,
+        ROOT_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+        GRADLE_PROPERTIES_PATH,
+        WRAPPER_PROPERTIES_PATH,
+        GITIGNORE,
+    )
+    private val moduleTwoFileNames = setOf(
+        BUILD_GRADLE,
+        ANDROID_MANIFEST,
+        QUALITY_TEST_RECEIVER,
+        CRASHLYTICS_RESOURCES,
+    )
+    private val moduleTwoPathFragments = setOf(
+        BUILD_LOGIC_PATH,
+        BUILD_SRC_PATH,
+        GRADLE_PATH,
+        PUBLIC_SOURCE_SET,
+        INTERNAL_SOURCE_SET,
+        PUBLIC_DEBUG_SOURCE_SET,
+        INTERNAL_DEBUG_SOURCE_SET,
+        RELEASE_SOURCE_SET,
+        DEBUG_SOURCE_SET,
+        SIGNING,
+        CONVENTION,
+        VARIANT,
+        FLAVOR,
+    )
 
     fun isAllowed(path: String): Boolean {
         val normalized = path.lowercase()
@@ -117,7 +148,8 @@ object FilePolicy {
         val name = segments.last()
         val extension = name.substringAfterLast(EXTENSION_SEPARATOR, EMPTY)
         val baseName = name.substringBeforeLast(EXTENSION_SEPARATOR, name)
-        if (name in forbiddenNames || extension in binaryExtensions || extension !in allowedExtensions) return false
+        if (name in forbiddenNames || extension in binaryExtensions) return false
+        if (name !in explicitlyAllowedNames && extension !in allowedExtensions) return false
         if (segments.any { it in forbiddenSegments }) return false
         if (baseName in sensitiveBaseNames) return false
         if (sensitiveFragments.any(normalized::contains)) return false
@@ -126,6 +158,7 @@ object FilePolicy {
 
     fun isModuleContext(path: String, moduleId: String): Boolean = when (moduleId) {
         MODULE_ONE_ID -> isModuleOneContext(path)
+        MODULE_TWO_ID -> isModuleTwoContext(path)
         MODULE_THREE_ID -> isModuleThreeContext(path)
         else -> false
     }
@@ -143,6 +176,14 @@ object FilePolicy {
         if (normalized in moduleOneExactPaths || name in moduleOneFileNames) return true
         if (normalized.startsWith(DOCS_PATH) && moduleOnePathFragments.any(normalized::contains)) return true
         return moduleOnePathFragments.any(normalized::contains)
+    }
+
+    private fun isModuleTwoContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleTwoExactPaths || name in moduleTwoFileNames) return true
+        if (name == BUILD_GRADLE) return true
+        return moduleTwoPathFragments.any(normalized::contains)
     }
 
     private const val KT = "kt"
@@ -212,8 +253,28 @@ object FilePolicy {
     private const val DELIVERY = "delivery"
     private const val MODULARIZATION = "modularization"
     private const val DOCS_PATH = "docs/"
+    private const val GRADLE_PROPERTIES_PATH = "gradle.properties"
+    private const val WRAPPER_PROPERTIES_PATH = "gradle/wrapper/gradle-wrapper.properties"
+    private const val GITIGNORE = ".gitignore"
+    private const val QUALITY_TEST_RECEIVER = "qualitytestreceiver.kt"
+    private const val CRASHLYTICS_RESOURCES = "crashlytics.xml"
+    private const val BUILD_LOGIC_PATH = "build-logic/"
+    private const val BUILD_SRC_PATH = "buildsrc/"
+    private const val GRADLE_PATH = "gradle/"
+    private const val PUBLIC_SOURCE_SET = "/src/public/"
+    private const val INTERNAL_SOURCE_SET = "/src/internal/"
+    private const val PUBLIC_DEBUG_SOURCE_SET = "/src/publicdebug/"
+    private const val INTERNAL_DEBUG_SOURCE_SET = "/src/internaldebug/"
+    private const val RELEASE_SOURCE_SET = "/src/release/"
+    private const val DEBUG_SOURCE_SET = "/src/debug/"
+    private const val SIGNING = "signing"
+    private const val CONVENTION = "convention"
+    private const val VARIANT = "variant"
+    private const val FLAVOR = "flavor"
     private const val EMPTY = ""
     private const val UNDERSCORE = "_"
     private const val PATH_SEPARATOR = '/'
     private const val EXTENSION_SEPARATOR = '.'
+
+    private val explicitlyAllowedNames = setOf(GITIGNORE)
 }

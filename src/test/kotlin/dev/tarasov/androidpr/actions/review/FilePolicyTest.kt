@@ -2,6 +2,7 @@ package dev.tarasov.androidpr.actions.review
 
 import dev.tarasov.androidpr.actions.rubric.moduleId
 import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_TWO_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,6 +19,7 @@ class FilePolicyTest {
         assertFalse(FilePolicy.isAllowed("screenshots/user-list.png"))
         assertFalse(FilePolicy.isAllowed("config/secrets.properties"))
         assertTrue(FilePolicy.isAllowed("feature/SecretaryScreen.kt"))
+        assertTrue(FilePolicy.isAllowed(".gitignore"))
     }
 
     @Test
@@ -40,6 +42,18 @@ class FilePolicyTest {
         assertTrue(FilePolicy.isModuleContext("account/src/test/AccountFeatureFlagTest.kt", MODULE_ONE_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/data/UserDao.kt", MODULE_ONE_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/androidTest/UserDatabaseMigrationTest.kt", MODULE_ONE_ID))
+    }
+
+    @Test
+    fun `recognizes module two Gradle and variant context`() {
+        assertTrue(FilePolicy.isModuleContext("settings.gradle.kts", MODULE_TWO_ID))
+        assertTrue(FilePolicy.isModuleContext("build-logic/build.gradle.kts", MODULE_TWO_ID))
+        assertTrue(FilePolicy.isModuleContext("build-logic/src/main/kotlin/AndroidApplicationConventionPlugin.kt", MODULE_TWO_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/internalDebug/AndroidManifest.xml", MODULE_TWO_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/debug/java/QualityTestReceiver.kt", MODULE_TWO_ID))
+        assertTrue(FilePolicy.isModuleContext(".gitignore", MODULE_TWO_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/java/UserListScreen.kt", MODULE_TWO_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/test/UserListViewModelTest.kt", MODULE_TWO_ID))
     }
 
     @Test
