@@ -51,7 +51,9 @@ class ReviewFormatterTest {
 
         val output = ReviewFormatter.format(result, context, rubric)
 
-        assertTrue("<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.version} sha=$HEAD_SHA -->" in output)
+        assertTrue(
+            "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} sha=$HEAD_SHA -->" in output,
+        )
         assertTrue("All states \\| covered" in output)
         assertTrue("`app/UserListScreen.kt:120` — AnimatedContent uses state keys" in output)
         assertEquals(1, output.windowed(TRUNCATED_LIMITATION.length).count { it == TRUNCATED_LIMITATION })

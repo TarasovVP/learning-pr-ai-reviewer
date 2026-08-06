@@ -9,7 +9,10 @@ import dev.tarasov.androidpr.actions.rubric.Rubric
 object ReviewFormatter {
     fun format(result: AiReviewResult, context: ReviewContext, rubric: Rubric): String =
         buildString {
-            appendLine("<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.version} sha=${context.pullRequest.headSha} -->")
+            appendLine(
+                "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} " +
+                    "sha=${context.pullRequest.headSha} -->",
+            )
             appendLine(REVIEW_TITLE)
             appendLine()
             appendLine("**Commit:** `${context.pullRequest.headSha.take(12)}`  ")

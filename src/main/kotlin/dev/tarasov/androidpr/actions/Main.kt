@@ -43,7 +43,6 @@ private fun runReview(args: Array<String>) = runBlocking {
     }
     try {
         val github = GitHubTokenApiClient(http, config.githubToken, json)
-        val rubric = RubricLoader.load()
         val coordinator = ReviewCoordinator(
             github = github,
             ai = OpenAiReviewClient(
@@ -54,7 +53,7 @@ private fun runReview(args: Array<String>) = runBlocking {
                 json = json,
             ),
             collector = ContextCollector(github, config.maxFiles, config.maxContextBytes),
-            rubric = rubric,
+            rubricProvider = RubricLoader,
             allowedRepositories = config.allowedRepositories,
         )
         when (val outcome = coordinator.process(

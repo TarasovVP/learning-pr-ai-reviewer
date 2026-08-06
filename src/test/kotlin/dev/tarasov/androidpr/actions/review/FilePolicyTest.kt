@@ -1,6 +1,8 @@
 package dev.tarasov.androidpr.actions.review
 
 import dev.tarasov.androidpr.actions.rubric.moduleId
+import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,13 +22,24 @@ class FilePolicyTest {
 
     @Test
     fun `recognizes module three context`() {
-        assertTrue(FilePolicy.isModuleThreeContext("feature/users/UserDetailsScreen.kt"))
-        assertTrue(FilePolicy.isModuleThreeContext("app/src/androidTest/UserScreensTest.kt"))
-        assertTrue(FilePolicy.isModuleThreeContext("app/src/main/res/values/strings.xml"))
-        assertTrue(FilePolicy.isModuleThreeContext("app/build.gradle.kts"))
-        assertFalse(FilePolicy.isModuleThreeContext("settings/build.gradle.kts"))
-        assertFalse(FilePolicy.isModuleThreeContext("app/src/androidTest/UserDatabaseMigrationTest.kt"))
-        assertFalse(FilePolicy.isModuleThreeContext("data/UserRepository.kt"))
+        assertTrue(FilePolicy.isModuleContext("feature/users/UserDetailsScreen.kt", MODULE_THREE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/androidTest/UserScreensTest.kt", MODULE_THREE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/res/values/strings.xml", MODULE_THREE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/build.gradle.kts", MODULE_THREE_ID))
+        assertFalse(FilePolicy.isModuleContext("settings/build.gradle.kts", MODULE_THREE_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/androidTest/UserDatabaseMigrationTest.kt", MODULE_THREE_ID))
+        assertFalse(FilePolicy.isModuleContext("data/UserRepository.kt", MODULE_THREE_ID))
+    }
+
+    @Test
+    fun `recognizes module one architecture context`() {
+        assertTrue(FilePolicy.isModuleContext("settings.gradle.kts", MODULE_ONE_ID))
+        assertTrue(FilePolicy.isModuleContext("account/build.gradle.kts", MODULE_ONE_ID))
+        assertTrue(FilePolicy.isModuleContext("settings/src/main/AndroidManifest.xml", MODULE_ONE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/settings/SettingsFeatureLauncher.kt", MODULE_ONE_ID))
+        assertTrue(FilePolicy.isModuleContext("account/src/test/AccountFeatureFlagTest.kt", MODULE_ONE_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/data/UserDao.kt", MODULE_ONE_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/androidTest/UserDatabaseMigrationTest.kt", MODULE_ONE_ID))
     }
 
     @Test

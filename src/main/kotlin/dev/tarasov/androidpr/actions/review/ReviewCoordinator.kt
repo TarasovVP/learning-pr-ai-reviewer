@@ -8,7 +8,7 @@ import dev.tarasov.androidpr.actions.domain.ReviewJob
 import dev.tarasov.androidpr.actions.domain.Trigger
 import dev.tarasov.androidpr.actions.github.GitHubService
 import dev.tarasov.androidpr.actions.openai.AiReviewService
-import dev.tarasov.androidpr.actions.rubric.Rubric
+import dev.tarasov.androidpr.actions.rubric.RubricProvider
 import dev.tarasov.androidpr.actions.rubric.moduleId
 import org.slf4j.LoggerFactory
 import kotlin.time.measureTimedValue
@@ -22,7 +22,7 @@ class ReviewCoordinator(
     private val github: GitHubService,
     private val ai: AiReviewService,
     private val collector: ContextCollector,
-    private val rubric: Rubric,
+    private val rubricProvider: RubricProvider,
     private val allowedRepositories: Set<String>,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -45,17 +45,17 @@ class ReviewCoordinator(
         val pr = github.getPullRequest(job.repository, job.pullRequestNumber)
         if (pr.state != ReviewProtocol.OPEN_PULL_REQUEST) return ReviewOutcome.Skipped(SkipReasons.PULL_REQUEST_NOT_OPEN)
         if (pr.baseRef != Defaults.BASE_BRANCH) return ReviewOutcome.Skipped(SkipReasons.WRONG_BASE_BRANCH)
-        if (pr.body.moduleId() != ReviewProtocol.SUPPORTED_MODULE) return ReviewOutcome.Skipped(
-            SkipReasons.UNSUPPORTED_MODULE
-        )
+        val moduleId = pr.body.moduleId() ?: return ReviewOutcome.Skipped(SkipReasons.UNSUPPORTED_MODULE)
+        val rubric = rubricProvider.find(moduleId) ?: return ReviewOutcome.Skipped(SkipReasons.UNSUPPORTED_MODULE)
         if (job.trigger == Trigger.MANUAL && !isTrustedManualRequester(job, pr)) {
             return ReviewOutcome.Skipped(SkipReasons.UNAUTHORIZED_REQUESTER)
         }
-        val marker = "${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.version} sha=${pr.headSha}"
+        val marker =
+            "${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} sha=${pr.headSha}"
         if (github.existingReviewBodies(job.repository, pr.number).any { marker in it }) {
             return ReviewOutcome.Skipped(SkipReasons.ALREADY_REVIEWED)
         }
-        val context = collector.collect(job.repository, pr)
+        val context = collector.collect(job.repository, pr, moduleId)
         val result = ai.review(context, rubric)
         val body = ReviewFormatter.format(result, context, rubric)
         github.createCommentReview(job.repository, pr.number, pr.headSha, body)

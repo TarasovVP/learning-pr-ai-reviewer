@@ -30,7 +30,6 @@ object CliFlags {
 
 object ReviewProtocol {
     const val REVIEWER_MARKER = "android-pr-ai-reviewer-actions"
-    const val SUPPORTED_MODULE = "3-compose-ui"
     const val MODULE_PREFIX = "Module:"
     const val OPEN_PULL_REQUEST = "open"
     const val READY_TRIGGER = "ready_for_review"

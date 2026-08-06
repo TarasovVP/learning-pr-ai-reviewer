@@ -7,9 +7,10 @@ The project is a separate GitHub Actions implementation of Android PR AI Reviewe
 ## Current scope
 
 - Sample Assignment
+- Sample Assignment
 - Automatic review when a draft pull request becomes ready for review
 - Manual rerun through the exact `/ai-review` comment
-- Deduplication by commit SHA and rubric version
+- Deduplication by module rubric, rubric version, and commit SHA
 - Direct GitHub API access with the workflow's short-lived `GITHUB_TOKEN`
 - OpenAI Responses API with structured JSON output and `store: false`
 - Maximum 60 text files and 400 KB of context
@@ -66,7 +67,13 @@ No GitHub App installation is required.
 
 ## Pull request contract
 
-The pull request must target `main` and contain this exact module marker in its description:
+The pull request must target `main` and contain one supported module marker in its description:
+
+```text
+Module: 1-mobile-architecture
+```
+
+or:
 
 ```text
 Module: 3-compose-ui

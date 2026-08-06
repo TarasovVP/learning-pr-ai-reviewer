@@ -5,13 +5,15 @@ import dev.tarasov.androidpr.actions.domain.PullRequestInfo
 import dev.tarasov.androidpr.actions.domain.ReviewContext
 import dev.tarasov.androidpr.actions.domain.SourceFile
 import dev.tarasov.androidpr.actions.github.GitHubService
+import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 
 class ContextCollector(
     private val github: GitHubService,
     private val maxFiles: Int,
     private val maxBytes: Int,
 ) {
-    suspend fun collect(repository: String, pr: PullRequestInfo): ReviewContext {
+    suspend fun collect(repository: String, pr: PullRequestInfo, moduleId: String): ReviewContext {
         val changed = github.listChangedFiles(repository, pr.number)
         val changedByPath = changed.associateBy(ChangedFile::path)
         val candidates = LinkedHashSet<String>()
@@ -23,7 +25,7 @@ class ContextCollector(
             github.listRepositoryPaths(repository, pr.headSha)
                 .asSequence()
                 .filter(FilePolicy::isAllowed)
-                .filter(FilePolicy::isModuleThreeContext)
+                .filter { FilePolicy.isModuleContext(it, moduleId) }
                 .forEach(candidates::add)
         }
 
@@ -74,6 +76,40 @@ object FilePolicy {
         "app/src/main/res/values/strings.xml",
     )
     private val moduleThreeTestFragments = setOf(COMPOSE_TEST, ACCESSIBILITY)
+    private val moduleOneExactPaths = setOf(
+        SETTINGS_GRADLE,
+        ROOT_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+    )
+    private val moduleOneFileNames = setOf(
+        BUILD_GRADLE,
+        ANDROID_MANIFEST,
+        USER_LIST_APPLICATION,
+        MAIN_ACTIVITY,
+        APP_NAVIGATION,
+        DESTINATIONS,
+        SETTINGS_FEATURE_LAUNCHER,
+        SETTINGS_FEATURE_DEPENDENCIES,
+        ACCOUNT_SCREEN,
+        AUTH_VIEW_MODEL,
+        AUTH_USE_CASES,
+        REPOSITORIES,
+        MODELS,
+        AUTH_SESSION_REPOSITORY,
+    )
+    private val moduleOnePathFragments = setOf(
+        ACCOUNT_FEATURE_PATH,
+        SETTINGS_FEATURE_PATH,
+        SETTINGS_BRIDGE_PATH,
+        NAVIGATION_PATH,
+        FEATURE_FLAG,
+        FEATURE_FLAG_UNDERSCORE,
+        SPLIT_INSTALL,
+        SPLIT_COMPAT,
+        DELIVERY,
+        MODULARIZATION,
+    )
 
     fun isAllowed(path: String): Boolean {
         val normalized = path.lowercase()
@@ -88,11 +124,25 @@ object FilePolicy {
         return true
     }
 
-    fun isModuleThreeContext(path: String): Boolean {
+    fun isModuleContext(path: String, moduleId: String): Boolean = when (moduleId) {
+        MODULE_ONE_ID -> isModuleOneContext(path)
+        MODULE_THREE_ID -> isModuleThreeContext(path)
+        else -> false
+    }
+
+    private fun isModuleThreeContext(path: String): Boolean {
         val normalized = path.lowercase()
         val name = normalized.substringAfterLast(PATH_SEPARATOR)
         if (normalized in moduleThreeExactPaths || name in moduleThreeFileNames) return true
         return moduleThreeTestFragments.any(name.replace(UNDERSCORE, EMPTY)::contains)
+    }
+
+    private fun isModuleOneContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleOneExactPaths || name in moduleOneFileNames) return true
+        if (normalized.startsWith(DOCS_PATH) && moduleOnePathFragments.any(normalized::contains)) return true
+        return moduleOnePathFragments.any(normalized::contains)
     }
 
     private const val KT = "kt"
@@ -133,6 +183,35 @@ object FilePolicy {
     private const val PRIVATE_KEY_UNDERSCORE = "private_key"
     private const val COMPOSE_TEST = "composetest"
     private const val ACCESSIBILITY = "accessibility"
+    private const val SETTINGS_GRADLE = "settings.gradle.kts"
+    private const val ROOT_BUILD_GRADLE = "build.gradle.kts"
+    private const val VERSION_CATALOG = "gradle/libs.versions.toml"
+    private const val README = "readme.md"
+    private const val BUILD_GRADLE = "build.gradle.kts"
+    private const val ANDROID_MANIFEST = "androidmanifest.xml"
+    private const val USER_LIST_APPLICATION = "userlistapplication.kt"
+    private const val MAIN_ACTIVITY = "mainactivity.kt"
+    private const val APP_NAVIGATION = "appnavigation.kt"
+    private const val DESTINATIONS = "destinations.kt"
+    private const val SETTINGS_FEATURE_LAUNCHER = "settingsfeaturelauncher.kt"
+    private const val SETTINGS_FEATURE_DEPENDENCIES = "settingsfeaturedependencies.kt"
+    private const val ACCOUNT_SCREEN = "accountscreen.kt"
+    private const val AUTH_VIEW_MODEL = "authviewmodel.kt"
+    private const val AUTH_USE_CASES = "authusecases.kt"
+    private const val REPOSITORIES = "repositories.kt"
+    private const val MODELS = "models.kt"
+    private const val AUTH_SESSION_REPOSITORY = "authsessionrepositoryimpl.kt"
+    private const val ACCOUNT_FEATURE_PATH = "/feature/account/"
+    private const val SETTINGS_FEATURE_PATH = "/feature/settings/"
+    private const val SETTINGS_BRIDGE_PATH = "/settings/"
+    private const val NAVIGATION_PATH = "/navigation/"
+    private const val FEATURE_FLAG = "featureflag"
+    private const val FEATURE_FLAG_UNDERSCORE = "feature_flag"
+    private const val SPLIT_INSTALL = "splitinstall"
+    private const val SPLIT_COMPAT = "splitcompat"
+    private const val DELIVERY = "delivery"
+    private const val MODULARIZATION = "modularization"
+    private const val DOCS_PATH = "docs/"
     private const val EMPTY = ""
     private const val UNDERSCORE = "_"
     private const val PATH_SEPARATOR = '/'
