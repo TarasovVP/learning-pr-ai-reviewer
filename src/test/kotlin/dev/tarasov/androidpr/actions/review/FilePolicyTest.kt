@@ -7,6 +7,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_SEVEN_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_EIGHT_ID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -101,6 +102,21 @@ class FilePolicyTest {
         assertTrue(FilePolicy.isModuleContext("docs/unit-testing-tdd.md", MODULE_SIX_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/feature/users/UserListScreen.kt", MODULE_SIX_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_SIX_ID))
+    }
+
+    @Test
+    fun `recognizes module seven instrumented UI fake and screenshot context`() {
+        assertTrue(FilePolicy.isModuleContext("app/build.gradle.kts", MODULE_SEVEN_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/androidTest/HiltTestRunner.kt", MODULE_SEVEN_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/androidTest/ApplicationUserFlowTest.kt", MODULE_SEVEN_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/androidTest/PhotoPickerUiAutomatorTest.kt", MODULE_SEVEN_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/androidTest/TestFakeRepositories.kt", MODULE_SEVEN_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/screenshotTestDebug/UiScreenshotTest.kt", MODULE_SEVEN_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/feature/account/AccountScreen.kt", MODULE_SEVEN_ID))
+        assertTrue(FilePolicy.isModuleContext("docs/ui-testing.md", MODULE_SEVEN_ID))
+        assertFalse(FilePolicy.isAllowed("app/src/screenshotTestDebug/reference/users.png"))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_SEVEN_ID))
+        assertFalse(FilePolicy.isModuleContext("docs/openapi.yaml", MODULE_SEVEN_ID))
     }
 
     @Test

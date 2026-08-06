@@ -11,6 +11,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_SEVEN_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_EIGHT_ID
 
 class ContextCollector(
@@ -248,6 +249,45 @@ object FilePolicy {
         JACOCO,
         TDD,
     )
+    private val moduleSevenExactPaths = setOf(
+        ROOT_BUILD_GRADLE,
+        APP_BUILD_GRADLE,
+        SETTINGS_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+        GRADLE_PROPERTIES_PATH,
+    )
+    private val moduleSevenFileNames = setOf(
+        HILT_TEST_RUNNER,
+        USER_SCREENS_TEST,
+        APP_MODULE,
+        MAIN_ACTIVITY,
+        APP_NAVIGATION,
+        DESTINATIONS,
+        USER_REPOSITORY,
+        AUTH_SESSION_REPOSITORY,
+        SETTINGS_REPOSITORY,
+        USER_LIST_SCREEN,
+        USER_LIST_VIEW_MODEL,
+        USER_DETAILS_SCREEN,
+        USER_DETAILS_VIEW_MODEL,
+        ACCOUNT_SCREEN,
+        AUTH_VIEW_MODEL,
+        SETTINGS_SCREEN,
+        SETTINGS_VIEW_MODEL,
+    )
+    private val moduleSevenPathFragments = setOf(
+        ANDROID_TEST_SOURCE_PATH,
+        SCREENSHOT_TEST_SOURCE_PATH,
+        UI_TEST,
+        UI_AUTOMATOR,
+        SCREENSHOT,
+        PREVIEW_TEST,
+        TEST_INSTALL_IN,
+        UNINSTALL_MODULES,
+        TEST_FAKE,
+        TESTING_DOCS,
+    )
     private val moduleEightExactPaths = setOf(
         ROOT_BUILD_GRADLE,
         APP_BUILD_GRADLE,
@@ -303,6 +343,7 @@ object FilePolicy {
         MODULE_FOUR_ID -> isModuleFourContext(path)
         MODULE_FIVE_ID -> isModuleFiveContext(path)
         MODULE_SIX_ID -> isModuleSixContext(path)
+        MODULE_SEVEN_ID -> isModuleSevenContext(path)
         MODULE_EIGHT_ID -> isModuleEightContext(path)
         else -> false
     }
@@ -350,6 +391,13 @@ object FilePolicy {
         if (normalized in moduleSixExactPaths || name in moduleSixFileNames) return true
         if (name == BUILD_GRADLE) return true
         return moduleSixPathFragments.any(normalized::contains)
+    }
+
+    private fun isModuleSevenContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleSevenExactPaths || name in moduleSevenFileNames) return true
+        return moduleSevenPathFragments.any(normalized::contains)
     }
 
     private fun isModuleEightContext(path: String): Boolean {
@@ -504,6 +552,20 @@ object FilePolicy {
     private const val KOVER = "kover"
     private const val JACOCO = "jacoco"
     private const val TDD = "tdd"
+    private const val HILT_TEST_RUNNER = "hilttestrunner.kt"
+    private const val USER_SCREENS_TEST = "userscreenstest.kt"
+    private const val SETTINGS_REPOSITORY = "settingsrepositoryimpl.kt"
+    private const val USER_DETAILS_VIEW_MODEL = "userdetailsviewmodel.kt"
+    private const val SETTINGS_VIEW_MODEL = "settingsviewmodel.kt"
+    private const val SCREENSHOT_TEST_SOURCE_PATH = "/src/screenshottest"
+    private const val UI_TEST = "uitest"
+    private const val UI_AUTOMATOR = "uiautomator"
+    private const val SCREENSHOT = "screenshot"
+    private const val PREVIEW_TEST = "previewtest"
+    private const val TEST_INSTALL_IN = "testinstallin"
+    private const val UNINSTALL_MODULES = "uninstallmodules"
+    private const val TEST_FAKE = "testfake"
+    private const val TESTING_DOCS = "ui-testing"
     private const val DEBUG_MANIFEST = "app/src/debug/androidmanifest.xml"
     private const val CRASHLYTICS_RESOURCES_PATH = "app/src/main/res/values/crashlytics.xml"
     private const val APP_QUALITY_MONITOR = "appqualitymonitor.kt"
