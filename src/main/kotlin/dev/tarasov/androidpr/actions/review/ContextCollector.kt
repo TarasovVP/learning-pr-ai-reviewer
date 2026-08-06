@@ -10,6 +10,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_TWO_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
 
 class ContextCollector(
     private val github: GitHubService,
@@ -214,6 +215,38 @@ object FilePolicy {
         AUTH_PATH,
         MIGRATION,
     )
+    private val moduleSixExactPaths = setOf(
+        SETTINGS_GRADLE,
+        ROOT_BUILD_GRADLE,
+        APP_BUILD_GRADLE,
+        SETTINGS_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+        GRADLE_PROPERTIES_PATH,
+    )
+    private val moduleSixFileNames = setOf(
+        FILTER_AND_SORT_USE_CASE_FILE,
+        USER_USE_CASES,
+        USER_MODEL,
+        USER_API,
+        USER_DTOS,
+        USER_REMOTE_SOURCE,
+        RETROFIT_USER_REMOTE_SOURCE,
+        USER_LIST_FILTERING_TEST,
+        APP_MODULE,
+    )
+    private val moduleSixPathFragments = setOf(
+        TEST_SOURCE_PATH,
+        ANDROID_TEST_SOURCE_PATH,
+        KOTEST,
+        PROPERTY_TEST,
+        GENERATOR,
+        MOCK_WEB_SERVER,
+        COVERAGE,
+        KOVER,
+        JACOCO,
+        TDD,
+    )
 
     fun isAllowed(path: String): Boolean {
         val normalized = path.lowercase()
@@ -235,6 +268,7 @@ object FilePolicy {
         MODULE_THREE_ID -> isModuleThreeContext(path)
         MODULE_FOUR_ID -> isModuleFourContext(path)
         MODULE_FIVE_ID -> isModuleFiveContext(path)
+        MODULE_SIX_ID -> isModuleSixContext(path)
         else -> false
     }
 
@@ -273,6 +307,14 @@ object FilePolicy {
         val name = normalized.substringAfterLast(PATH_SEPARATOR)
         if (normalized in moduleFiveExactPaths || name in moduleFiveFileNames) return true
         return moduleFivePathFragments.any(normalized::contains)
+    }
+
+    private fun isModuleSixContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleSixExactPaths || name in moduleSixFileNames) return true
+        if (name == BUILD_GRADLE) return true
+        return moduleSixPathFragments.any(normalized::contains)
     }
 
     private const val KT = "kt"
@@ -365,6 +407,7 @@ object FilePolicy {
     private const val VARIANT = "variant"
     private const val FLAVOR = "flavor"
     private const val APP_BUILD_GRADLE = "app/build.gradle.kts"
+    private const val SETTINGS_BUILD_GRADLE = "settings/build.gradle.kts"
     private const val OPENAPI_CONTRACT = "docs/openapi.yaml"
     private const val USER_API = "userapi.kt"
     private const val AUTH_API = "authapi.kt"
@@ -405,6 +448,20 @@ object FilePolicy {
     private const val DATA_LOCAL_PATH = "/data/local/"
     private const val AUTH_PATH = "/auth"
     private const val MIGRATION = "migration"
+    private const val FILTER_AND_SORT_USE_CASE_FILE = "filterandsortusersusecase.kt"
+    private const val USER_USE_CASES = "userusecases.kt"
+    private const val USER_MODEL = "user.kt"
+    private const val USER_LIST_FILTERING_TEST = "userlistfilteringtest.kt"
+    private const val TEST_SOURCE_PATH = "/src/test/"
+    private const val ANDROID_TEST_SOURCE_PATH = "/src/androidtest/"
+    private const val KOTEST = "kotest"
+    private const val PROPERTY_TEST = "propertytest"
+    private const val GENERATOR = "generator"
+    private const val MOCK_WEB_SERVER = "mockwebserver"
+    private const val COVERAGE = "coverage"
+    private const val KOVER = "kover"
+    private const val JACOCO = "jacoco"
+    private const val TDD = "tdd"
     private const val EMPTY = ""
     private const val UNDERSCORE = "_"
     private const val PATH_SEPARATOR = '/'

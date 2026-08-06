@@ -6,6 +6,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_TWO_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -84,6 +85,21 @@ class FilePolicyTest {
         assertTrue(FilePolicy.isModuleContext(".github/workflows/signed-release.yml", MODULE_FIVE_ID))
         assertTrue(FilePolicy.isModuleContext("docs/security-review.md", MODULE_FIVE_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/feature/users/UserListScreen.kt", MODULE_FIVE_ID))
+    }
+
+    @Test
+    fun `recognizes module six tests HTTP coverage and production targets`() {
+        assertTrue(FilePolicy.isModuleContext("build.gradle.kts", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("app/build.gradle.kts", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("settings/build.gradle.kts", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("gradle/libs.versions.toml", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/domain/usecase/UserUseCases.kt", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/data/remote/RetrofitUserRemoteDataSource.kt", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/test/UserListFilteringPropertyTest.kt", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/test/RetrofitUserRemoteDataSourceTest.kt", MODULE_SIX_ID))
+        assertTrue(FilePolicy.isModuleContext("docs/unit-testing-tdd.md", MODULE_SIX_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/feature/users/UserListScreen.kt", MODULE_SIX_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_SIX_ID))
     }
 
     @Test
