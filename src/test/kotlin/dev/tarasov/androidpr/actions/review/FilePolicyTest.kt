@@ -7,6 +7,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_EIGHT_ID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -100,6 +101,20 @@ class FilePolicyTest {
         assertTrue(FilePolicy.isModuleContext("docs/unit-testing-tdd.md", MODULE_SIX_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/feature/users/UserListScreen.kt", MODULE_SIX_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_SIX_ID))
+    }
+
+    @Test
+    fun `recognizes module eight monitoring lifecycle UI and debug context`() {
+        assertTrue(FilePolicy.isModuleContext("build.gradle.kts", MODULE_EIGHT_ID))
+        assertTrue(FilePolicy.isModuleContext("app/build.gradle.kts", MODULE_EIGHT_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/debug/AndroidManifest.xml", MODULE_EIGHT_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/res/values/crashlytics.xml", MODULE_EIGHT_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/core/quality/AppQualityMonitor.kt", MODULE_EIGHT_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/core/quality/JankMonitoring.kt", MODULE_EIGHT_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/navigation/AppNavigation.kt", MODULE_EIGHT_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/test/UserRefreshPerformanceTest.kt", MODULE_EIGHT_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_EIGHT_ID))
+        assertFalse(FilePolicy.isModuleContext("docs/openapi.yaml", MODULE_EIGHT_ID))
     }
 
     @Test

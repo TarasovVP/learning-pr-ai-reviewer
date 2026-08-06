@@ -11,6 +11,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_EIGHT_ID
 
 class ContextCollector(
     private val github: GitHubService,
@@ -247,6 +248,39 @@ object FilePolicy {
         JACOCO,
         TDD,
     )
+    private val moduleEightExactPaths = setOf(
+        ROOT_BUILD_GRADLE,
+        APP_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+        DEBUG_MANIFEST,
+        CRASHLYTICS_RESOURCES_PATH,
+    )
+    private val moduleEightFileNames = setOf(
+        APP_QUALITY_MONITOR,
+        JANK_MONITORING,
+        MAIN_ACTIVITY,
+        QUALITY_TEST_RECEIVER,
+        USER_REPOSITORY,
+        USER_USE_CASES,
+        USER_LIST_VIEW_MODEL,
+        USER_LIST_SCREEN,
+        USER_DETAILS_SCREEN,
+        ACCOUNT_SCREEN,
+        SETTINGS_SCREEN,
+        APP_NAVIGATION,
+        DESTINATIONS,
+        APP_MODULE,
+        USER_SYNC_WORKER,
+    )
+    private val moduleEightPathFragments = setOf(
+        QUALITY,
+        PERFORMANCE,
+        JANK,
+        CRASHLYTICS,
+        MONITORING,
+        TELEMETRY,
+    )
 
     fun isAllowed(path: String): Boolean {
         val normalized = path.lowercase()
@@ -269,6 +303,7 @@ object FilePolicy {
         MODULE_FOUR_ID -> isModuleFourContext(path)
         MODULE_FIVE_ID -> isModuleFiveContext(path)
         MODULE_SIX_ID -> isModuleSixContext(path)
+        MODULE_EIGHT_ID -> isModuleEightContext(path)
         else -> false
     }
 
@@ -315,6 +350,13 @@ object FilePolicy {
         if (normalized in moduleSixExactPaths || name in moduleSixFileNames) return true
         if (name == BUILD_GRADLE) return true
         return moduleSixPathFragments.any(normalized::contains)
+    }
+
+    private fun isModuleEightContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleEightExactPaths || name in moduleEightFileNames) return true
+        return moduleEightPathFragments.any(normalized::contains)
     }
 
     private const val KT = "kt"
@@ -462,6 +504,18 @@ object FilePolicy {
     private const val KOVER = "kover"
     private const val JACOCO = "jacoco"
     private const val TDD = "tdd"
+    private const val DEBUG_MANIFEST = "app/src/debug/androidmanifest.xml"
+    private const val CRASHLYTICS_RESOURCES_PATH = "app/src/main/res/values/crashlytics.xml"
+    private const val APP_QUALITY_MONITOR = "appqualitymonitor.kt"
+    private const val JANK_MONITORING = "jankmonitoring.kt"
+    private const val USER_DETAILS_SCREEN = "userdetailsscreen.kt"
+    private const val SETTINGS_SCREEN = "settingsscreen.kt"
+    private const val QUALITY = "quality"
+    private const val PERFORMANCE = "performance"
+    private const val JANK = "jank"
+    private const val CRASHLYTICS = "crashlytics"
+    private const val MONITORING = "monitoring"
+    private const val TELEMETRY = "telemetry"
     private const val EMPTY = ""
     private const val UNDERSCORE = "_"
     private const val PATH_SEPARATOR = '/'
