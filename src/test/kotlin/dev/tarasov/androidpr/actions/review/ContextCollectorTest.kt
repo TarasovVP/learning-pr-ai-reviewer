@@ -1,5 +1,9 @@
-package dev.tarasov.androidpr.actions
+package dev.tarasov.androidpr.actions.review
 
+import dev.tarasov.androidpr.actions.domain.ChangedFile
+import dev.tarasov.androidpr.actions.domain.PullRequestInfo
+import dev.tarasov.androidpr.actions.domain.SourceFile
+import dev.tarasov.androidpr.actions.github.GitHubService
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,7 +18,7 @@ class ContextCollectorTest {
             github.pullRequest,
         )
 
-        assertEquals(listOf("app/UserListScreen.kt", "app/UserDetails.kt"), context.files.map(SourceFile::path))
+        assertEquals(listOf("app/UserListScreen.kt", "app/UserDetailsScreen.kt"), context.files.map(SourceFile::path))
         assertTrue(context.files.first().patch?.contains("AnimatedContent") == true)
     }
 }
@@ -29,7 +33,7 @@ private class CollectorGitHub : GitHubService {
         ChangedFile("app/icon.png", "modified", null),
     )
     override suspend fun listRepositoryPaths(repository: String, ref: String) =
-        listOf("app/UserListScreen.kt", "app/UserDetails.kt", "build/generated/UiText.kt")
+        listOf("app/UserListScreen.kt", "app/UserDetailsScreen.kt", "build/generated/UiText.kt")
     override suspend fun getFileContent(repository: String, path: String, ref: String) = "content of $path"
     override suspend fun collaboratorPermission(repository: String, username: String) = "read"
     override suspend fun existingReviewBodies(repository: String, number: Int) = emptyList<String>()

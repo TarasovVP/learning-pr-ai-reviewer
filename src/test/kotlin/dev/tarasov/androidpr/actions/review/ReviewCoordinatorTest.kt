@@ -1,5 +1,19 @@
-package dev.tarasov.androidpr.actions
+package dev.tarasov.androidpr.actions.review
 
+import dev.tarasov.androidpr.actions.config.ReviewProtocol
+import dev.tarasov.androidpr.actions.config.SkipReasons
+import dev.tarasov.androidpr.actions.domain.AiReviewResult
+import dev.tarasov.androidpr.actions.domain.ChangedFile
+import dev.tarasov.androidpr.actions.domain.PullRequestInfo
+import dev.tarasov.androidpr.actions.domain.RequirementResult
+import dev.tarasov.androidpr.actions.domain.RequirementStatus
+import dev.tarasov.androidpr.actions.domain.ReviewContext
+import dev.tarasov.androidpr.actions.domain.ReviewJob
+import dev.tarasov.androidpr.actions.domain.Trigger
+import dev.tarasov.androidpr.actions.github.GitHubService
+import dev.tarasov.androidpr.actions.openai.AiReviewService
+import dev.tarasov.androidpr.actions.rubric.Rubric
+import dev.tarasov.androidpr.actions.rubric.RubricLoader
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,19 +29,19 @@ class ReviewCoordinatorTest {
 
         assertIs<ReviewOutcome.Published>(outcome)
         assertEquals(1, github.published.size)
-        assert(REVIEWER_MARKER in github.published.single())
+        assert(ReviewProtocol.REVIEWER_MARKER in github.published.single())
     }
 
     @Test
     fun `deduplicates same SHA and rubric version`() = runTest {
         val github = FakeGitHub().apply {
-            reviewBodies += "<!-- $REVIEWER_MARKER rubric=2.0.0 sha=abc123 -->"
+            reviewBodies += "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=2.0.0 sha=abc123 -->"
         }
 
         val outcome = coordinator(github).process(github.job())
 
         assertIs<ReviewOutcome.Skipped>(outcome)
-        assertEquals("commit already reviewed with this rubric", outcome.reason)
+        assertEquals(SkipReasons.ALREADY_REVIEWED, outcome.reason)
     }
 
     @Test
@@ -37,7 +51,7 @@ class ReviewCoordinatorTest {
         val outcome = coordinator(github).process(github.job(Trigger.MANUAL, "stranger"))
 
         assertIs<ReviewOutcome.Skipped>(outcome)
-        assertEquals("manual requester is not authorized", outcome.reason)
+        assertEquals(SkipReasons.UNAUTHORIZED_REQUESTER, outcome.reason)
     }
 
     private fun coordinator(github: FakeGitHub): ReviewCoordinator {

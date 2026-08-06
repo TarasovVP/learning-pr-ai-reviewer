@@ -1,16 +1,17 @@
-package dev.tarasov.androidpr.actions
+package dev.tarasov.androidpr.actions.config
 
+import dev.tarasov.androidpr.actions.domain.Trigger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class ConfigTest {
     private val baseEnv = mapOf(
-        "GITHUB_TOKEN" to "github-token",
-        "OPENAI_API_KEY" to "openai-key",
-        "GITHUB_REPOSITORY" to "owner/repository",
-        "PR_NUMBER" to "7",
-        "GITHUB_ACTOR" to "student",
+        EnvironmentNames.GITHUB_TOKEN to "github-token",
+        EnvironmentNames.OPENAI_API_KEY to "openai-key",
+        EnvironmentNames.GITHUB_REPOSITORY to "owner/repository",
+        EnvironmentNames.PR_NUMBER to "7",
+        EnvironmentNames.GITHUB_ACTOR to "student",
     )
 
     @Test

@@ -1,10 +1,7 @@
-package dev.tarasov.androidpr.actions
+package dev.tarasov.androidpr.actions.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
-const val REVIEWER_MARKER = "android-pr-ai-reviewer-actions"
-const val SUPPORTED_MODULE = "3-compose-ui"
 
 data class ReviewJob(
     val repository: String,

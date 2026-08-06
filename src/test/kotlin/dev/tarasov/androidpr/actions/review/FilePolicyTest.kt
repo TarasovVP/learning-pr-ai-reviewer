@@ -1,5 +1,6 @@
-package dev.tarasov.androidpr.actions
+package dev.tarasov.androidpr.actions.review
 
+import dev.tarasov.androidpr.actions.rubric.moduleId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -13,6 +14,8 @@ class FilePolicyTest {
         assertFalse(FilePolicy.isAllowed("release.keystore"))
         assertFalse(FilePolicy.isAllowed("app/build/generated/source.kt"))
         assertFalse(FilePolicy.isAllowed("screenshots/user-list.png"))
+        assertFalse(FilePolicy.isAllowed("config/secrets.properties"))
+        assertTrue(FilePolicy.isAllowed("feature/SecretaryScreen.kt"))
     }
 
     @Test
@@ -20,6 +23,8 @@ class FilePolicyTest {
         assertTrue(FilePolicy.isModuleThreeContext("feature/users/UserDetailsScreen.kt"))
         assertTrue(FilePolicy.isModuleThreeContext("app/src/androidTest/UserScreensTest.kt"))
         assertTrue(FilePolicy.isModuleThreeContext("app/src/main/res/values/strings.xml"))
+        assertTrue(FilePolicy.isModuleThreeContext("app/build.gradle.kts"))
+        assertFalse(FilePolicy.isModuleThreeContext("settings/build.gradle.kts"))
         assertFalse(FilePolicy.isModuleThreeContext("app/src/androidTest/UserDatabaseMigrationTest.kt"))
         assertFalse(FilePolicy.isModuleThreeContext("data/UserRepository.kt"))
     }

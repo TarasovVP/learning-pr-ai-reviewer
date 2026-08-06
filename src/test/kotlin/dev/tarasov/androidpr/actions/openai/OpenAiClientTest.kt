@@ -1,5 +1,12 @@
-package dev.tarasov.androidpr.actions
+package dev.tarasov.androidpr.actions.openai
 
+import dev.tarasov.androidpr.actions.domain.AiReviewResult
+import dev.tarasov.androidpr.actions.domain.PullRequestInfo
+import dev.tarasov.androidpr.actions.domain.RequirementResult
+import dev.tarasov.androidpr.actions.domain.RequirementStatus
+import dev.tarasov.androidpr.actions.domain.ReviewContext
+import dev.tarasov.androidpr.actions.domain.SourceFile
+import dev.tarasov.androidpr.actions.rubric.RubricLoader
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
