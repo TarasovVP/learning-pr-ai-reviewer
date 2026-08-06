@@ -45,8 +45,9 @@ object FilePolicy {
     private val forbiddenSegments = setOf("build", ".gradle", ".idea", "generated", "captures", "screenshots")
     private val sensitiveFragments = setOf("keystore", "private-key", "private_key", "secret")
     private val moduleThreeFragments = setOf(
-        "userlistscreen", "userdetails", "accountscreen", "signinscreen", "settingsscreen",
-        "userlisttheme", "uitext", "androidtest", "composetest", "accessibility",
+        "userlistscreen", "userlistviewmodel", "userdetails", "accountscreen", "signinscreen",
+        "settingsscreen", "settingsviewmodel", "userlisttheme", "uitext", "userscreenstest",
+        "composetest", "accessibility", "strings.xml", "build.gradle", "libs.versions.toml",
     )
 
     fun isAllowed(path: String): Boolean {

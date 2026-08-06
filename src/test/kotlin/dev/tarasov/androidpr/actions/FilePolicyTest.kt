@@ -18,7 +18,9 @@ class FilePolicyTest {
     @Test
     fun `recognizes module three context`() {
         assertTrue(FilePolicy.isModuleThreeContext("feature/users/UserDetailsScreen.kt"))
-        assertTrue(FilePolicy.isModuleThreeContext("app/src/androidTest/UserListTest.kt"))
+        assertTrue(FilePolicy.isModuleThreeContext("app/src/androidTest/UserScreensTest.kt"))
+        assertTrue(FilePolicy.isModuleThreeContext("app/src/main/res/values/strings.xml"))
+        assertFalse(FilePolicy.isModuleThreeContext("app/src/androidTest/UserDatabaseMigrationTest.kt"))
         assertFalse(FilePolicy.isModuleThreeContext("data/UserRepository.kt"))
     }
 

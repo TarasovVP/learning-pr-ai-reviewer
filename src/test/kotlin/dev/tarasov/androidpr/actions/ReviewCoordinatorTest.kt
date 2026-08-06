@@ -21,7 +21,7 @@ class ReviewCoordinatorTest {
     @Test
     fun `deduplicates same SHA and rubric version`() = runTest {
         val github = FakeGitHub().apply {
-            reviewBodies += "<!-- $REVIEWER_MARKER rubric=1.0.0 sha=abc123 -->"
+            reviewBodies += "<!-- $REVIEWER_MARKER rubric=2.0.0 sha=abc123 -->"
         }
 
         val outcome = coordinator(github).process(github.job())
