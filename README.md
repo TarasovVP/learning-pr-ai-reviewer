@@ -9,6 +9,7 @@ The project is a separate GitHub Actions implementation of Android PR AI Reviewe
 - Sample Assignment
 - Sample Assignment
 - Sample Assignment
+- Sample Assignment
 - Automatic review when a draft pull request becomes ready for review
 - Manual rerun through the exact `/ai-review` comment
 - Deduplication by module rubric, rubric version, and commit SHA
@@ -84,6 +85,12 @@ or:
 
 ```text
 Module: 3-compose-ui
+```
+
+or:
+
+```text
+Module: 4-networking
 ```
 
 ## Configuration

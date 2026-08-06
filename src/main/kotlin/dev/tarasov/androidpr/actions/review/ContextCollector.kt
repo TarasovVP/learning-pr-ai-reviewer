@@ -8,6 +8,7 @@ import dev.tarasov.androidpr.actions.github.GitHubService
 import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_TWO_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_FOUR_ID
 
 class ContextCollector(
     private val github: GitHubService,
@@ -50,14 +51,15 @@ class ContextCollector(
 private const val REMOVED_STATUS = "removed"
 
 object FilePolicy {
-    private val allowedExtensions = setOf(KT, KTS, XML, MD, PROPERTIES, TOML, TXT)
+    private val allowedExtensions = setOf(KT, KTS, XML, MD, PROPERTIES, TOML, TXT, JSON, YAML, YML)
     private val binaryExtensions =
         setOf(PNG, JPG, JPEG, GIF, WEBP, ICO, JAR, ZIP, AAB, APK, KEYSTORE, JKS, DER, P12)
     private val forbiddenNames = setOf(ENV_FILE, GOOGLE_SERVICES_FILE, LOCAL_PROPERTIES_FILE)
     private val forbiddenSegments =
         setOf(BUILD, GRADLE_CACHE, IDEA, GENERATED, CAPTURES, SCREENSHOTS)
     private val sensitiveBaseNames = setOf(SECRET, SECRETS, CREDENTIAL, CREDENTIALS)
-    private val sensitiveFragments = setOf(KEYSTORE, PRIVATE_KEY_DASH, PRIVATE_KEY_UNDERSCORE)
+    private val sensitiveFragments =
+        setOf(KEYSTORE, PRIVATE_KEY_DASH, PRIVATE_KEY_UNDERSCORE, POSTMAN_ENVIRONMENT)
     private val moduleThreeFileNames = setOf(
         "userlistscreen.kt",
         "userlistviewmodel.kt",
@@ -141,6 +143,38 @@ object FilePolicy {
         VARIANT,
         FLAVOR,
     )
+    private val moduleFourExactPaths = setOf(
+        ROOT_BUILD_GRADLE,
+        APP_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+        OPENAPI_CONTRACT,
+    )
+    private val moduleFourFileNames = setOf(
+        USER_API,
+        AUTH_API,
+        USER_DTOS,
+        USER_REMOTE_SOURCE,
+        RETROFIT_USER_REMOTE_SOURCE,
+        USER_REPOSITORY,
+        USER_LIST_VIEW_MODEL,
+        USER_LIST_SCREEN,
+        APP_MODULE,
+        APP_MANIFEST,
+        USER_REPOSITORY_TEST,
+        USER_LIST_VIEW_MODEL_TEST,
+    )
+    private val moduleFourPathFragments = setOf(
+        POSTMAN,
+        OPENAPI,
+        WEBSOCKET,
+        NETWORK_SECURITY,
+        NETWORK_SECURITY_UNDERSCORE,
+        NETWORK_PATH,
+        DATA_REMOTE_PATH,
+        CHARLES,
+        RETROFIT,
+    )
 
     fun isAllowed(path: String): Boolean {
         val normalized = path.lowercase()
@@ -160,6 +194,7 @@ object FilePolicy {
         MODULE_ONE_ID -> isModuleOneContext(path)
         MODULE_TWO_ID -> isModuleTwoContext(path)
         MODULE_THREE_ID -> isModuleThreeContext(path)
+        MODULE_FOUR_ID -> isModuleFourContext(path)
         else -> false
     }
 
@@ -186,6 +221,13 @@ object FilePolicy {
         return moduleTwoPathFragments.any(normalized::contains)
     }
 
+    private fun isModuleFourContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleFourExactPaths || name in moduleFourFileNames) return true
+        return moduleFourPathFragments.any(normalized::contains)
+    }
+
     private const val KT = "kt"
     private const val KTS = "kts"
     private const val XML = "xml"
@@ -193,6 +235,9 @@ object FilePolicy {
     private const val PROPERTIES = "properties"
     private const val TOML = "toml"
     private const val TXT = "txt"
+    private const val JSON = "json"
+    private const val YAML = "yaml"
+    private const val YML = "yml"
     private const val PNG = "png"
     private const val JPG = "jpg"
     private const val JPEG = "jpeg"
@@ -222,6 +267,7 @@ object FilePolicy {
     private const val CREDENTIALS = "credentials"
     private const val PRIVATE_KEY_DASH = "private-key"
     private const val PRIVATE_KEY_UNDERSCORE = "private_key"
+    private const val POSTMAN_ENVIRONMENT = "postman_environment"
     private const val COMPOSE_TEST = "composetest"
     private const val ACCESSIBILITY = "accessibility"
     private const val SETTINGS_GRADLE = "settings.gradle.kts"
@@ -271,6 +317,29 @@ object FilePolicy {
     private const val CONVENTION = "convention"
     private const val VARIANT = "variant"
     private const val FLAVOR = "flavor"
+    private const val APP_BUILD_GRADLE = "app/build.gradle.kts"
+    private const val OPENAPI_CONTRACT = "docs/openapi.yaml"
+    private const val USER_API = "userapi.kt"
+    private const val AUTH_API = "authapi.kt"
+    private const val USER_DTOS = "userdtos.kt"
+    private const val USER_REMOTE_SOURCE = "userremotedatasource.kt"
+    private const val RETROFIT_USER_REMOTE_SOURCE = "retrofituserremotedatasource.kt"
+    private const val USER_REPOSITORY = "userrepositoryimpl.kt"
+    private const val USER_LIST_VIEW_MODEL = "userlistviewmodel.kt"
+    private const val USER_LIST_SCREEN = "userlistscreen.kt"
+    private const val APP_MODULE = "appmodule.kt"
+    private const val APP_MANIFEST = "androidmanifest.xml"
+    private const val USER_REPOSITORY_TEST = "userrepositoryimpltest.kt"
+    private const val USER_LIST_VIEW_MODEL_TEST = "userlistviewmodeltest.kt"
+    private const val POSTMAN = "postman"
+    private const val OPENAPI = "openapi"
+    private const val WEBSOCKET = "websocket"
+    private const val NETWORK_SECURITY = "network-security"
+    private const val NETWORK_SECURITY_UNDERSCORE = "network_security"
+    private const val NETWORK_PATH = "/network/"
+    private const val DATA_REMOTE_PATH = "/data/remote/"
+    private const val CHARLES = "charles"
+    private const val RETROFIT = "retrofit"
     private const val EMPTY = ""
     private const val UNDERSCORE = "_"
     private const val PATH_SEPARATOR = '/'
