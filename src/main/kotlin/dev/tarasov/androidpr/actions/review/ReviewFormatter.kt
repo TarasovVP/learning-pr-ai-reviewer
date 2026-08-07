@@ -50,6 +50,12 @@ object ReviewFormatter {
             val limitations = result.limitations.toMutableList()
             limitations += STATIC_REVIEW_LIMITATION
             if (context.truncated) limitations += TRUNCATED_CONTEXT_LIMITATION
+            if (context.redactedFiles.isNotEmpty()) {
+                limitations += "$REDACTED_CONTEXT_LIMITATION ${context.redactedFiles.joinToString { "`${it.escape()}`" }}"
+            }
+            if (context.skippedFiles.isNotEmpty()) {
+                limitations += "$SKIPPED_CONTEXT_LIMITATION ${context.skippedFiles.joinToString { "`${it.escape()}`" }}"
+            }
             appendLine()
             appendLine(LIMITATIONS_TITLE)
             limitations.distinct().forEach { appendLine("- ${it.escape()}") }
@@ -78,6 +84,10 @@ private const val STATIC_REVIEW_LIMITATION =
     "The reviewer did not build or run the application, tests, emulator, or TalkBack."
 private const val TRUNCATED_CONTEXT_LIMITATION =
     "Repository context was truncated by the pilot limits."
+private const val REDACTED_CONTEXT_LIMITATION =
+    "Potential secret values were redacted before AI analysis in:"
+private const val SKIPPED_CONTEXT_LIMITATION =
+    "The following files could not be read through the GitHub Contents API:"
 private const val ADVISORY_NOTICE =
     "_Advisory result only. Final validation remains with the engineer or mentor._"
 private const val NO_EVIDENCE = "—"

@@ -9,6 +9,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ContextCollectorTest {
@@ -44,6 +45,53 @@ class ContextCollectorTest {
             context.files.map(SourceFile::path),
         )
     }
+
+    @Test
+    fun `counts patch bytes and omits patch that exceeds context limit`() = runTest {
+        val github = EdgeCaseCollectorGitHub(content = "12345", patch = "1234567890")
+
+        val context = ContextCollector(github, maxFiles = 1, maxBytes = 10).collect(
+            github.repository,
+            github.pullRequest,
+            MODULE_THREE_ID,
+        )
+
+        assertEquals(5, context.totalBytes)
+        assertNull(context.files.single().patch)
+        assertTrue(context.truncated)
+    }
+
+    @Test
+    fun `reports files that GitHub contents API cannot return`() = runTest {
+        val github = EdgeCaseCollectorGitHub(content = null, patch = null)
+
+        val context = ContextCollector(github, maxFiles = 1, maxBytes = 100).collect(
+            github.repository,
+            github.pullRequest,
+            MODULE_THREE_ID,
+        )
+
+        assertEquals(listOf(github.path), context.skippedFiles)
+        assertTrue(context.truncated)
+    }
+
+    @Test
+    fun `redacts secrets from full content and patch`() = runTest {
+        val secret = "sk-${"abcdefghijklmnopqrstuvwxyz123456"}"
+        val github = EdgeCaseCollectorGitHub(
+            content = "val apiKey = \"$secret\"",
+            patch = "+ val apiKey = \"$secret\"",
+        )
+
+        val context = ContextCollector(github, maxFiles = 1, maxBytes = 1_000).collect(
+            github.repository,
+            github.pullRequest,
+            MODULE_THREE_ID,
+        )
+
+        assertEquals(listOf(github.path), context.redactedFiles)
+        assertTrue(context.files.none { secret in it.content || secret in it.patch.orEmpty() })
+    }
 }
 
 private class CollectorGitHub : GitHubService {
@@ -78,6 +126,25 @@ private class ArchitectureCollectorGitHub : GitHubService {
         "app/src/main/data/UserDao.kt",
     )
     override suspend fun getFileContent(repository: String, path: String, ref: String) = "content of $path"
+    override suspend fun collaboratorPermission(repository: String, username: String) = "read"
+    override suspend fun existingReviewBodies(repository: String, number: Int) = emptyList<String>()
+    override suspend fun createCommentReview(repository: String, number: Int, sha: String, body: String) = Unit
+}
+
+private class EdgeCaseCollectorGitHub(
+    private val content: String?,
+    private val patch: String?,
+) : GitHubService {
+    val repository = "owner/repository"
+    val path = "app/src/main/UserListScreen.kt"
+    val pullRequest =
+        PullRequestInfo(3, "Compose", "Module: 3-compose-ui", "open", false, "main", "sha", "student")
+
+    override suspend fun getPullRequest(repository: String, number: Int) = pullRequest
+    override suspend fun listChangedFiles(repository: String, number: Int) =
+        listOf(ChangedFile(path, "modified", patch))
+    override suspend fun listRepositoryPaths(repository: String, ref: String) = emptyList<String>()
+    override suspend fun getFileContent(repository: String, path: String, ref: String) = content
     override suspend fun collaboratorPermission(repository: String, username: String) = "read"
     override suspend fun existingReviewBodies(repository: String, number: Int) = emptyList<String>()
     override suspend fun createCommentReview(repository: String, number: Int, sha: String, body: String) = Unit

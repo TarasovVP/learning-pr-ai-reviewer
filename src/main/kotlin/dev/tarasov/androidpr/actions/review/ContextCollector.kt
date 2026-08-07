@@ -19,6 +19,7 @@ class ContextCollector(
     private val github: GitHubService,
     private val maxFiles: Int,
     private val maxBytes: Int,
+    private val sanitizer: ContentSanitizer = SecretRedactor,
 ) {
     suspend fun collect(repository: String, pr: PullRequestInfo, moduleId: String): ReviewContext {
         val changed = github.listChangedFiles(repository, pr.number)
@@ -37,23 +38,41 @@ class ContextCollector(
         }
 
         val files = mutableListOf<SourceFile>()
+        val redactedFiles = mutableListOf<String>()
+        val skippedFiles = mutableListOf<String>()
         var totalBytes = 0
         var truncated = candidates.size > maxFiles
         for (path in candidates.take(maxFiles)) {
-            val content = github.getFileContent(repository, path, pr.headSha) ?: continue
-            val bytes = content.toByteArray(Charsets.UTF_8).size
-            if (totalBytes + bytes > maxBytes) {
+            val content = github.getFileContent(repository, path, pr.headSha)
+            if (content == null) {
+                skippedFiles += path
                 truncated = true
                 continue
             }
-            files += SourceFile(path, content, changedByPath[path]?.patch)
-            totalBytes += bytes
+            val sanitizedContent = sanitizer.sanitize(content)
+            val sanitizedPatch = changedByPath[path]?.patch?.let(sanitizer::sanitize)
+            val contentBytes = sanitizedContent.text.byteSize()
+            if (totalBytes + contentBytes > maxBytes) {
+                truncated = true
+                continue
+            }
+            val acceptedPatch = sanitizedPatch?.takeIf {
+                totalBytes + contentBytes + it.text.byteSize() <= maxBytes
+            }
+            if (sanitizedPatch != null && acceptedPatch == null) truncated = true
+            if (sanitizedContent.redactionCount > 0 || (sanitizedPatch?.redactionCount ?: 0) > 0) {
+                redactedFiles += path
+            }
+            files += SourceFile(path, sanitizedContent.text, acceptedPatch?.text)
+            totalBytes += contentBytes + (acceptedPatch?.text?.byteSize() ?: 0)
         }
-        return ReviewContext(pr, files, totalBytes, truncated)
+        return ReviewContext(pr, files, totalBytes, truncated, redactedFiles, skippedFiles)
     }
 }
 
 private const val REMOVED_STATUS = "removed"
+
+private fun String.byteSize(): Int = toByteArray(Charsets.UTF_8).size
 
 object FilePolicy {
     private val allowedExtensions = setOf(KT, KTS, XML, MD, PROPERTIES, TOML, TXT, JSON, YAML, YML)

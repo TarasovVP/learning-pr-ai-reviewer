@@ -4,6 +4,8 @@ import dev.tarasov.androidpr.actions.domain.ChangedFile
 import dev.tarasov.androidpr.actions.domain.PullRequestInfo
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.request.accept
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -25,6 +27,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import java.net.URLEncoder
+import java.io.IOException
 import java.util.Base64
 
 interface GitHubService {
@@ -162,6 +165,10 @@ class GitHubTokenApiClient(
                 last = error
                 if (error.status !in listOf(429, 500, 502, 503, 504) || attempt == 2) throw error
                 delay(250L shl attempt)
+            } catch (error: Throwable) {
+                if (!error.isTransientTransportFailure() || attempt == 2) throw error
+                last = error
+                delay(250L shl attempt)
             }
         }
         throw requireNotNull(last)
@@ -233,3 +240,7 @@ private fun encode(value: String): String =
     URLEncoder.encode(value, Charsets.UTF_8).replace("+", "%20")
 
 private fun encodePath(path: String): String = path.split('/').joinToString("/") { encode(it) }
+
+private fun Throwable.isTransientTransportFailure(): Boolean =
+    this is HttpRequestTimeoutException || this is ConnectTimeoutException ||
+        this is IOException

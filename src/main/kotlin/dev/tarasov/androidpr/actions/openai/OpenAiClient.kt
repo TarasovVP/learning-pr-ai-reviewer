@@ -10,6 +10,7 @@ import dev.tarasov.androidpr.actions.rubric.Rubric
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -27,6 +28,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import java.io.IOException
 
 interface AiReviewService {
     suspend fun review(context: ReviewContext, rubric: Rubric): AiReviewResult
@@ -108,6 +110,8 @@ class OpenAiReviewClient(
         appendLine("$BODY_PREFIX${context.pullRequest.body}")
         appendLine("$COMMIT_PREFIX${context.pullRequest.headSha}")
         appendLine("$TRUNCATED_PREFIX${context.truncated}")
+        appendLine("$REDACTED_FILES_PREFIX${context.redactedFiles.joinToString()}")
+        appendLine("$SKIPPED_FILES_PREFIX${context.skippedFiles.joinToString()}")
         context.files.forEach { file ->
             appendLine("$FILE_OPEN_PREFIX${json.encodeToString(file.path)}$TAG_CLOSE")
             file.patch?.let { appendLine("$PATCH_OPEN\n$it\n$PATCH_CLOSE") }
@@ -128,6 +132,10 @@ class OpenAiReviewClient(
             } catch (error: HttpRequestTimeoutException) {
                 last = error
                 if (attempt == 2) throw error
+                delay(250L shl attempt)
+            } catch (error: Throwable) {
+                if (!error.isTransientTransportFailure() || attempt == 2) throw error
+                last = error
                 delay(250L shl attempt)
             }
         }
@@ -276,8 +284,13 @@ private const val TITLE_PREFIX = "Title: "
 private const val BODY_PREFIX = "Body: "
 private const val COMMIT_PREFIX = "Commit: "
 private const val TRUNCATED_PREFIX = "Context truncated: "
+private const val REDACTED_FILES_PREFIX = "Files with redacted secret values: "
+private const val SKIPPED_FILES_PREFIX = "Files unavailable to static analysis: "
 private const val FILE_OPEN_PREFIX = "<file path="
 private const val TAG_CLOSE = ">"
 private const val FILE_CLOSE = "</file>"
 private const val PATCH_OPEN = "<patch>"
 private const val PATCH_CLOSE = "</patch>"
+
+private fun Throwable.isTransientTransportFailure(): Boolean =
+    this is ConnectTimeoutException || this is IOException

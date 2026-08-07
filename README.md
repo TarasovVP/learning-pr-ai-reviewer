@@ -20,7 +20,7 @@ The project is a separate GitHub Actions implementation of Android PR AI Reviewe
 - Deduplication by module rubric, rubric version, and commit SHA
 - Direct GitHub API access with the workflow's short-lived `GITHUB_TOKEN`
 - OpenAI Responses API with structured JSON output and `store: false`
-- Maximum 60 text files and 400 KB of context
+- Maximum 60 text files and 400 KB of combined file content and patches
 - Advisory `COMMENT` reviews only
 
 The reviewer does not clone or execute the submitted project. It does not build Android code, run tests, use an emulator, or validate TalkBack behavior.
@@ -54,11 +54,13 @@ Optional CLI flags override repository, PR, actor, and trigger values:
 
 ## Centralized GitHub Actions model
 
-The reviewer repository owns `.github/workflows/reusable-review.yml`. Each engineer repository contains only a small caller workflow based on [docs/caller-workflow.yml](docs/caller-workflow.yml).
+The reviewer repository owns `.github/workflows/reusable-review.yml`. Each engineer repository contains only a small caller workflow based on [docs/caller-workflow.yml](docs/caller-workflow.yml). During repository provisioning, an administrator must replace `REVIEWER_COMMIT_SHA` with the reviewed full commit SHA. Engineers do not perform this configuration.
 
 The caller reacts to `pull_request_target.ready_for_review` and the `/ai-review` issue comment. It invokes the centralized workflow, which downloads this reviewer, runs the CLI with the caller repository's `GITHUB_TOKEN`, and publishes the result back to that pull request. The caller passes only `OPENAI_API_KEY`, rather than inheriting every available repository secret.
 
 `pull_request_target` is used so that repository secrets are not taken from or controlled by the PR branch. The workflow never checks out or executes submitted PR code; source is read as untrusted text through the GitHub API.
+
+The reusable workflow checks out its Kotlin implementation from `job.workflow_sha`, so the executed code always comes from the same immutable commit as the called workflow definition.
 
 For multiple engineer repositories, configure `OPENAI_API_KEY` as an organization secret with access only to approved training repositories. Install the caller workflow in each repository's default branch. Engineers never receive or configure the OpenAI key themselves.
 

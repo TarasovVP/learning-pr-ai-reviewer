@@ -40,6 +40,8 @@ data class ReviewContext(
     val files: List<SourceFile>,
     val totalBytes: Int,
     val truncated: Boolean,
+    val redactedFiles: List<String> = emptyList(),
+    val skippedFiles: List<String> = emptyList(),
 )
 
 @Serializable

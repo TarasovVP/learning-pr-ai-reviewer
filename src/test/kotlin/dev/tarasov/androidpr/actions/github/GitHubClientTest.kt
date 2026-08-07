@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -46,6 +47,19 @@ class GitHubClientTest {
             requests++
             if (requests == 1) respond(ERROR_BODY, HttpStatusCode.InternalServerError)
             else respond(PERMISSION_BODY, HttpStatusCode.OK)
+        }
+
+        assertEquals("write", client.collaboratorPermission(REPOSITORY, USERNAME))
+        assertEquals(2, requests)
+    }
+
+    @Test
+    fun `retries transient transport error`() = runTest {
+        var requests = 0
+        val client = client {
+            requests++
+            if (requests == 1) throw IOException("connection reset")
+            respond(PERMISSION_BODY, HttpStatusCode.OK)
         }
 
         assertEquals("write", client.collaboratorPermission(REPOSITORY, USERNAME))
