@@ -1,5 +1,6 @@
 package dev.tarasov.androidpr.actions.openai
 
+import dev.tarasov.androidpr.actions.ai.AiReviewService
 import dev.tarasov.androidpr.actions.domain.AiReviewResult
 import dev.tarasov.androidpr.actions.config.EvidenceSources
 import dev.tarasov.androidpr.actions.domain.RequirementResult
@@ -30,10 +31,6 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import java.io.IOException
-
-interface AiReviewService {
-    suspend fun review(context: ReviewContext, rubric: Rubric): AiReviewResult
-}
 
 class OpenAiReviewClient(
     private val http: HttpClient,

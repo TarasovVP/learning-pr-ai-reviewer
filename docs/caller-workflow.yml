@@ -21,7 +21,7 @@ jobs:
       trigger: ready_for_review
       requested_by: ${{ github.actor }}
     secrets:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY }}
 
   manual-review:
     if: >-
@@ -36,4 +36,4 @@ jobs:
       trigger: manual
       requested_by: ${{ github.actor }}
     secrets:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY }}

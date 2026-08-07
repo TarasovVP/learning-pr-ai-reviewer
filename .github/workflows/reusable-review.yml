@@ -20,8 +20,11 @@ on:
         required: false
         type: string
     secrets:
+      AI_API_KEY:
+        required: false
+      # Temporary compatibility for callers created before provider-neutral configuration.
       OPENAI_API_KEY:
-        required: true
+        required: false
 
 permissions:
   contents: read
@@ -56,11 +59,12 @@ jobs:
         run: ./android-pr-ai-reviewer-actions/gradlew --project-dir android-pr-ai-reviewer-actions run
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_PROVIDER: openai
+          AI_API_KEY: ${{ secrets.AI_API_KEY || secrets.OPENAI_API_KEY }}
           GITHUB_REPOSITORY: ${{ inputs.repository }}
           PR_NUMBER: ${{ inputs.pr_number }}
           GITHUB_ACTOR: ${{ inputs.requested_by }}
           REVIEW_TRIGGER: ${{ inputs.trigger }}
-          OPENAI_MODEL: provider-model
-          OPENAI_REASONING_EFFORT: medium
+          AI_MODEL: provider-model
+          AI_REASONING_EFFORT: medium
           ALLOWED_REPOSITORIES: ${{ inputs.repository }}

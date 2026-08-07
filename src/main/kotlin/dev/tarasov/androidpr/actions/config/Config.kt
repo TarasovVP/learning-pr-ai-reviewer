@@ -8,9 +8,10 @@ data class CliConfig(
     val requestedBy: String,
     val trigger: Trigger,
     val githubToken: String,
-    val openAiApiKey: String,
-    val openAiModel: String,
-    val openAiReasoningEffort: String,
+    val aiProvider: AiProvider,
+    val aiApiKey: String,
+    val aiModel: String,
+    val aiReasoningEffort: String,
     val allowedRepositories: Set<String>,
     val maxFiles: Int = Defaults.MAX_FILES,
     val maxContextBytes: Int = Defaults.MAX_CONTEXT_BYTES,
@@ -51,10 +52,13 @@ data class CliConfig(
                 requestedBy = requestedBy,
                 trigger = trigger,
                 githubToken = env.required(EnvironmentNames.GITHUB_TOKEN),
-                openAiApiKey = env.required(EnvironmentNames.OPENAI_API_KEY),
-                openAiModel = env[EnvironmentNames.OPENAI_MODEL] ?: Defaults.OPENAI_MODEL,
-                openAiReasoningEffort = env[EnvironmentNames.OPENAI_REASONING_EFFORT]
-                    ?: Defaults.OPENAI_REASONING_EFFORT,
+                aiProvider = AiProvider.parse(
+                    env[EnvironmentNames.AI_PROVIDER] ?: Defaults.AI_PROVIDER,
+                ),
+                aiApiKey = env.required(EnvironmentNames.AI_API_KEY),
+                aiModel = env[EnvironmentNames.AI_MODEL] ?: Defaults.AI_MODEL,
+                aiReasoningEffort = env[EnvironmentNames.AI_REASONING_EFFORT]
+                    ?: Defaults.AI_REASONING_EFFORT,
                 allowedRepositories = allowed,
             )
         }
@@ -77,6 +81,22 @@ data class CliConfig(
             "Requested repository does not match the GitHub Actions repository"
         private const val ARGUMENTS_ERROR = "Arguments must be --name value pairs"
         private const val UNKNOWN_ARGUMENT_PREFIX = "Unknown argument: "
+    }
+}
+
+enum class AiProvider(val id: String) {
+    OPENAI("openai");
+
+    companion object {
+        fun parse(value: String): AiProvider = entries.firstOrNull {
+            it.id.equals(value.trim(), ignoreCase = true)
+        } ?: error(
+            "$UNSUPPORTED_AI_PROVIDER_PREFIX$value. $SUPPORTED_AI_PROVIDERS_PREFIX" +
+                entries.joinToString { it.id },
+        )
+
+        private const val UNSUPPORTED_AI_PROVIDER_PREFIX = "Unsupported AI provider: "
+        private const val SUPPORTED_AI_PROVIDERS_PREFIX = "Supported providers: "
     }
 }
 

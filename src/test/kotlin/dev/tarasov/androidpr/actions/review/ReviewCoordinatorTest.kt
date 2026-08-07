@@ -11,7 +11,7 @@ import dev.tarasov.androidpr.actions.domain.ReviewContext
 import dev.tarasov.androidpr.actions.domain.ReviewJob
 import dev.tarasov.androidpr.actions.domain.Trigger
 import dev.tarasov.androidpr.actions.github.GitHubService
-import dev.tarasov.androidpr.actions.openai.AiReviewService
+import dev.tarasov.androidpr.actions.ai.AiReviewService
 import dev.tarasov.androidpr.actions.rubric.Rubric
 import dev.tarasov.androidpr.actions.rubric.RubricLoader
 import kotlinx.coroutines.test.runTest

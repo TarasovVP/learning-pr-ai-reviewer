@@ -1,9 +1,9 @@
 package dev.tarasov.androidpr.actions
 
+import dev.tarasov.androidpr.actions.ai.AiReviewClientFactory
 import dev.tarasov.androidpr.actions.config.CliConfig
 import dev.tarasov.androidpr.actions.domain.ReviewJob
 import dev.tarasov.androidpr.actions.github.GitHubTokenApiClient
-import dev.tarasov.androidpr.actions.openai.OpenAiReviewClient
 import dev.tarasov.androidpr.actions.review.ContextCollector
 import dev.tarasov.androidpr.actions.review.ReviewCoordinator
 import dev.tarasov.androidpr.actions.review.ReviewOutcome
@@ -45,13 +45,7 @@ private fun runReview(args: Array<String>) = runBlocking {
         val github = GitHubTokenApiClient(http, config.githubToken, json)
         val coordinator = ReviewCoordinator(
             github = github,
-            ai = OpenAiReviewClient(
-                http = http,
-                apiKey = config.openAiApiKey,
-                model = config.openAiModel,
-                reasoningEffort = config.openAiReasoningEffort,
-                json = json,
-            ),
+            ai = AiReviewClientFactory.create(config, http, json),
             collector = ContextCollector(github, config.maxFiles, config.maxContextBytes),
             rubricProvider = RubricLoader,
             allowedRepositories = config.allowedRepositories,

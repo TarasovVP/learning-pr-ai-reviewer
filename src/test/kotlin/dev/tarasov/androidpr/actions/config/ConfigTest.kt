@@ -8,7 +8,7 @@ import kotlin.test.assertFailsWith
 class ConfigTest {
     private val baseEnv = mapOf(
         EnvironmentNames.GITHUB_TOKEN to "github-token",
-        EnvironmentNames.OPENAI_API_KEY to "openai-key",
+        EnvironmentNames.AI_API_KEY to "ai-key",
         EnvironmentNames.GITHUB_REPOSITORY to "owner/repository",
         EnvironmentNames.PR_NUMBER to "7",
         EnvironmentNames.GITHUB_ACTOR to "student",
@@ -22,6 +22,8 @@ class ConfigTest {
         assertEquals(7, config.pullRequestNumber)
         assertEquals(Trigger.READY_FOR_REVIEW, config.trigger)
         assertEquals(setOf("owner/repository"), config.allowedRepositories)
+        assertEquals(AiProvider.OPENAI, config.aiProvider)
+        assertEquals(Defaults.AI_MODEL, config.aiModel)
     }
 
     @Test
@@ -40,6 +42,33 @@ class ConfigTest {
     fun `rejects repository different from workflow repository`() {
         assertFailsWith<IllegalArgumentException> {
             CliConfig.from(arrayOf("--repository", "other/repository", "--pr", "1"), baseEnv)
+        }
+    }
+
+    @Test
+    fun `reads provider-neutral AI configuration`() {
+        val config = CliConfig.from(
+            emptyArray(),
+            baseEnv + mapOf(
+                EnvironmentNames.AI_PROVIDER to "OPENAI",
+                EnvironmentNames.AI_MODEL to "custom-model",
+                EnvironmentNames.AI_REASONING_EFFORT to "high",
+            ),
+        )
+
+        assertEquals(AiProvider.OPENAI, config.aiProvider)
+        assertEquals("ai-key", config.aiApiKey)
+        assertEquals("custom-model", config.aiModel)
+        assertEquals("high", config.aiReasoningEffort)
+    }
+
+    @Test
+    fun `rejects unsupported AI provider`() {
+        assertFailsWith<IllegalStateException> {
+            CliConfig.from(
+                emptyArray(),
+                baseEnv + (EnvironmentNames.AI_PROVIDER to "unsupported"),
+            )
         }
     }
 }

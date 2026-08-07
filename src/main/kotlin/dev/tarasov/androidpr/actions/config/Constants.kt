@@ -1,8 +1,9 @@
 package dev.tarasov.androidpr.actions.config
 
 object Defaults {
-    const val OPENAI_MODEL = "provider-model"
-    const val OPENAI_REASONING_EFFORT = "medium"
+    const val AI_PROVIDER = "openai"
+    const val AI_MODEL = "provider-model"
+    const val AI_REASONING_EFFORT = "medium"
     const val BASE_BRANCH = "main"
     const val MAX_FILES = 60
     const val MAX_CONTEXT_BYTES = 400 * 1024
@@ -15,9 +16,10 @@ object EnvironmentNames {
     const val REVIEW_TRIGGER = "REVIEW_TRIGGER"
     const val ALLOWED_REPOSITORIES = "ALLOWED_REPOSITORIES"
     const val GITHUB_TOKEN = "GITHUB_TOKEN"
-    const val OPENAI_API_KEY = "OPENAI_API_KEY"
-    const val OPENAI_MODEL = "OPENAI_MODEL"
-    const val OPENAI_REASONING_EFFORT = "OPENAI_REASONING_EFFORT"
+    const val AI_PROVIDER = "AI_PROVIDER"
+    const val AI_API_KEY = "AI_API_KEY"
+    const val AI_MODEL = "AI_MODEL"
+    const val AI_REASONING_EFFORT = "AI_REASONING_EFFORT"
 }
 
 object CliFlags {
