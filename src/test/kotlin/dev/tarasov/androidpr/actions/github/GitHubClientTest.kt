@@ -30,6 +30,16 @@ class GitHubClientTest {
     }
 
     @Test
+    fun `reads both head and base commit SHA from pull request`() = runTest {
+        val client = client { respond(PULL_REQUEST_BODY, HttpStatusCode.OK) }
+
+        val pullRequest = client.getPullRequest(REPOSITORY, PULL_REQUEST_NUMBER)
+
+        assertEquals(HEAD_SHA, pullRequest.headSha)
+        assertEquals(BASE_SHA, pullRequest.baseSha)
+    }
+
+    @Test
     fun `propagates collaborator permission API errors`() = runTest {
         val client = client { respond(ERROR_BODY, HttpStatusCode.Forbidden) }
 
@@ -120,10 +130,23 @@ class GitHubClientTest {
         const val REPOSITORY = "owner/repository"
         const val USERNAME = "mentor"
         const val HEAD_SHA = "abc123"
+        const val BASE_SHA = "def456"
         const val PULL_REQUEST_NUMBER = 42
         const val ERROR_BODY = "{\"message\":\"error\"}"
         const val PERMISSION_BODY = "{\"permission\":\"write\"}"
         const val TRUNCATED_TREE_BODY = "{\"truncated\":true,\"tree\":[]}"
         const val CONTENT_BODY = "{\"encoding\":\"base64\",\"content\":\"aGVsbG8=\"}"
+        const val PULL_REQUEST_BODY = """
+            {
+              "number": 42,
+              "title": "Module review",
+              "body": "Module: 3-compose-ui",
+              "state": "open",
+              "draft": false,
+              "base": {"ref": "main", "sha": "$BASE_SHA"},
+              "head": {"sha": "$HEAD_SHA"},
+              "user": {"login": "student"}
+            }
+        """
     }
 }

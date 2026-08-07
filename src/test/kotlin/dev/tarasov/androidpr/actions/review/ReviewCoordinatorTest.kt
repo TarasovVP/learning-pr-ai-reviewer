@@ -33,16 +33,39 @@ class ReviewCoordinatorTest {
     }
 
     @Test
+    fun `recognizes natural module name in pull request title`() = runTest {
+        val github = FakeGitHub(title = "Sample Assignment", body = "Assignment implementation")
+
+        val outcome = coordinator(github).process(github.job())
+
+        assertIs<ReviewOutcome.Published>(outcome)
+    }
+
+    @Test
     fun `deduplicates same SHA and rubric version`() = runTest {
         val github = FakeGitHub().apply {
             reviewBodies +=
-                "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=sample-assignment@2.0.0 sha=abc123 -->"
+                "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=sample-assignment@2.0.0 " +
+                    "head=abc123 base=base123 -->"
         }
 
         val outcome = coordinator(github).process(github.job())
 
         assertIs<ReviewOutcome.Skipped>(outcome)
         assertEquals(SkipReasons.ALREADY_REVIEWED, outcome.reason)
+    }
+
+    @Test
+    fun `does not deduplicate when base SHA changed`() = runTest {
+        val github = FakeGitHub().apply {
+            reviewBodies +=
+                "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=sample-assignment@2.0.0 " +
+                    "head=abc123 base=older-base -->"
+        }
+
+        val outcome = coordinator(github).process(github.job())
+
+        assertIs<ReviewOutcome.Published>(outcome)
     }
 
     @Test
@@ -78,7 +101,11 @@ private class FakeAi : AiReviewService {
     )
 }
 
-private class FakeGitHub(private val permission: String = "write") : GitHubService {
+private class FakeGitHub(
+    private val permission: String = "write",
+    private val title: String = "Compose assignment",
+    private val body: String = "Module: 3-compose-ui",
+) : GitHubService {
     val repository = "owner/repository"
     val published = mutableListOf<String>()
     val reviewBodies = mutableListOf<String>()
@@ -87,7 +114,15 @@ private class FakeGitHub(private val permission: String = "write") : GitHubServi
         ReviewJob(repository, 42, requestedBy, trigger)
 
     override suspend fun getPullRequest(repository: String, number: Int) = PullRequestInfo(
-        number, "Compose assignment", "Module: 3-compose-ui", "open", false, "main", "abc123", "student",
+        number = number,
+        title = title,
+        body = body,
+        state = "open",
+        draft = false,
+        baseRef = "main",
+        headSha = "abc123",
+        author = "student",
+        baseSha = "base123",
     )
     override suspend fun listChangedFiles(repository: String, number: Int) =
         listOf(ChangedFile("app/src/main/UserListScreen.kt", "modified", "@@ change"))

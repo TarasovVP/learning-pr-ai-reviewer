@@ -57,6 +57,7 @@ class GitHubTokenApiClient(
             baseRef = root.getValue(BASE).jsonObject.getValue(REF).jsonPrimitive.content,
             headSha = root.getValue(HEAD).jsonObject.getValue(SHA).jsonPrimitive.content,
             author = root.getValue(USER).jsonObject.getValue(LOGIN).jsonPrimitive.content,
+            baseSha = root.getValue(BASE).jsonObject.getValue(SHA).jsonPrimitive.content,
         )
     }
 

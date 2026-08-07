@@ -27,6 +27,7 @@ class ReviewFormatterTest {
                 baseRef = "main",
                 headSha = HEAD_SHA,
                 author = "student",
+                baseSha = BASE_SHA,
             ),
             files = listOf(SourceFile("UserListScreen.kt", "content")),
             totalBytes = 7,
@@ -52,7 +53,8 @@ class ReviewFormatterTest {
         val output = ReviewFormatter.format(result, context, rubric)
 
         assertTrue(
-            "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} sha=$HEAD_SHA -->" in output,
+            "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} " +
+                "head=$HEAD_SHA base=$BASE_SHA -->" in output,
         )
         assertTrue("All states \\| covered" in output)
         assertTrue("`app/UserListScreen.kt:120` — AnimatedContent uses state keys" in output)
@@ -61,6 +63,7 @@ class ReviewFormatterTest {
 
     private companion object {
         const val HEAD_SHA = "abcdef1234567890"
+        const val BASE_SHA = "0123456789abcdef"
         const val TRUNCATED_LIMITATION = "Repository context was truncated by the pilot limits."
     }
 }

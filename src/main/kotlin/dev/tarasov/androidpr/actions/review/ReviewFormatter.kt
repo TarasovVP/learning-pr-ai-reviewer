@@ -11,11 +11,12 @@ object ReviewFormatter {
         buildString {
             appendLine(
                 "<!-- ${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} " +
-                    "sha=${context.pullRequest.headSha} -->",
+                    "head=${context.pullRequest.headSha} base=${context.pullRequest.baseSha} -->",
             )
             appendLine(REVIEW_TITLE)
             appendLine()
             appendLine("**Commit:** `${context.pullRequest.headSha.take(12)}`  ")
+            appendLine("**Base:** `${context.pullRequest.baseSha.take(12)}`  ")
             appendLine("**Rubric:** `${rubric.id}@${rubric.version}`")
             appendLine()
             appendLine(result.overallSummary)

@@ -41,6 +41,10 @@ object ReviewProtocol {
     val TRUSTED_PERMISSIONS = setOf(WRITE_PERMISSION, MAINTAIN_PERMISSION, ADMIN_PERMISSION)
 }
 
+object EvidenceSources {
+    const val PULL_REQUEST_DESCRIPTION = "PULL_REQUEST_DESCRIPTION"
+}
+
 object SkipReasons {
     const val REPOSITORY_NOT_ALLOWED = "repository is not allowed"
     const val PULL_REQUEST_NOT_OPEN = "pull request is not open"

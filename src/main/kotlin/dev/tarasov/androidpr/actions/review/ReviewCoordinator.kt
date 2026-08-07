@@ -9,7 +9,7 @@ import dev.tarasov.androidpr.actions.domain.Trigger
 import dev.tarasov.androidpr.actions.github.GitHubService
 import dev.tarasov.androidpr.actions.openai.AiReviewService
 import dev.tarasov.androidpr.actions.rubric.RubricProvider
-import dev.tarasov.androidpr.actions.rubric.moduleId
+import dev.tarasov.androidpr.actions.rubric.detectModuleId
 import org.slf4j.LoggerFactory
 import kotlin.time.measureTimedValue
 
@@ -45,18 +45,20 @@ class ReviewCoordinator(
         val pr = github.getPullRequest(job.repository, job.pullRequestNumber)
         if (pr.state != ReviewProtocol.OPEN_PULL_REQUEST) return ReviewOutcome.Skipped(SkipReasons.PULL_REQUEST_NOT_OPEN)
         if (pr.baseRef != Defaults.BASE_BRANCH) return ReviewOutcome.Skipped(SkipReasons.WRONG_BASE_BRANCH)
-        val moduleId = pr.body.moduleId() ?: return ReviewOutcome.Skipped(SkipReasons.UNSUPPORTED_MODULE)
+        val moduleId = detectModuleId(pr.title, pr.body)
+            ?: return ReviewOutcome.Skipped(SkipReasons.UNSUPPORTED_MODULE)
         val rubric = rubricProvider.find(moduleId) ?: return ReviewOutcome.Skipped(SkipReasons.UNSUPPORTED_MODULE)
         if (job.trigger == Trigger.MANUAL && !isTrustedManualRequester(job, pr)) {
             return ReviewOutcome.Skipped(SkipReasons.UNAUTHORIZED_REQUESTER)
         }
         val marker =
-            "${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} sha=${pr.headSha}"
+            "${ReviewProtocol.REVIEWER_MARKER} rubric=${rubric.id}@${rubric.version} " +
+                "head=${pr.headSha} base=${pr.baseSha}"
         if (github.existingReviewBodies(job.repository, pr.number).any { marker in it }) {
             return ReviewOutcome.Skipped(SkipReasons.ALREADY_REVIEWED)
         }
-        val context = collector.collect(job.repository, pr, moduleId)
-        val result = ai.review(context, rubric)
+        val context = collector.collect(job.repository, pr, rubric)
+        val result = ReviewResultValidator.validate(ai.review(context, rubric), context)
         val body = ReviewFormatter.format(result, context, rubric)
         github.createCommentReview(job.repository, pr.number, pr.headSha, body)
         return ReviewOutcome.Published(pr.headSha, context.totalBytes)

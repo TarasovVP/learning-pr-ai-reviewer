@@ -21,6 +21,7 @@ data class PullRequestInfo(
     val baseRef: String,
     val headSha: String,
     val author: String,
+    val baseSha: String = "",
 )
 
 data class ChangedFile(
@@ -33,6 +34,7 @@ data class SourceFile(
     val path: String,
     val content: String,
     val patch: String? = null,
+    val status: String = "unchanged",
 )
 
 data class ReviewContext(

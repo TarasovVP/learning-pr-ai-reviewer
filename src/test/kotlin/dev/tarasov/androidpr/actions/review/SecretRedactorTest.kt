@@ -47,4 +47,20 @@ class SecretRedactorTest {
 
         assertEquals(SanitizedContent(source, 0), SecretRedactor.sanitize(source))
     }
+
+    @Test
+    fun `redacts authorization credentials in MCP configuration`() {
+        val bearer = "mcp-secret-bearer-token-123456"
+        val basic = "dXNlcjpwYXNzd29yZA=="
+        val source = """
+            authorization = "Bearer $bearer"
+            fallback = "Basic $basic"
+        """.trimIndent()
+
+        val result = SecretRedactor.sanitize(source)
+
+        assertFalse(bearer in result.text)
+        assertFalse(basic in result.text)
+        assertTrue(result.redactionCount >= 2)
+    }
 }

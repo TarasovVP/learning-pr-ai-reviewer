@@ -6,6 +6,7 @@ import dev.tarasov.androidpr.actions.domain.SourceFile
 import dev.tarasov.androidpr.actions.github.GitHubService
 import dev.tarasov.androidpr.actions.rubric.MODULE_THREE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_ONE_ID
+import dev.tarasov.androidpr.actions.rubric.RubricLoader
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +20,7 @@ class ContextCollectorTest {
         val context = ContextCollector(github, maxFiles = 3, maxBytes = 200).collect(
             github.repository,
             github.pullRequest,
-            MODULE_THREE_ID,
+            requireNotNull(RubricLoader.find(MODULE_THREE_ID)),
         )
 
         assertEquals(listOf("app/UserListScreen.kt", "app/UserDetailsScreen.kt"), context.files.map(SourceFile::path))
@@ -32,7 +33,7 @@ class ContextCollectorTest {
         val context = ContextCollector(github, maxFiles = 4, maxBytes = 500).collect(
             github.repository,
             github.pullRequest,
-            MODULE_ONE_ID,
+            requireNotNull(RubricLoader.find(MODULE_ONE_ID)),
         )
 
         assertEquals(
@@ -53,7 +54,7 @@ class ContextCollectorTest {
         val context = ContextCollector(github, maxFiles = 1, maxBytes = 10).collect(
             github.repository,
             github.pullRequest,
-            MODULE_THREE_ID,
+            requireNotNull(RubricLoader.find(MODULE_THREE_ID)),
         )
 
         assertEquals(5, context.totalBytes)
@@ -68,7 +69,7 @@ class ContextCollectorTest {
         val context = ContextCollector(github, maxFiles = 1, maxBytes = 100).collect(
             github.repository,
             github.pullRequest,
-            MODULE_THREE_ID,
+            requireNotNull(RubricLoader.find(MODULE_THREE_ID)),
         )
 
         assertEquals(listOf(github.path), context.skippedFiles)
@@ -86,11 +87,31 @@ class ContextCollectorTest {
         val context = ContextCollector(github, maxFiles = 1, maxBytes = 1_000).collect(
             github.repository,
             github.pullRequest,
-            MODULE_THREE_ID,
+            requireNotNull(RubricLoader.find(MODULE_THREE_ID)),
         )
 
         assertEquals(listOf(github.path), context.redactedFiles)
         assertTrue(context.files.none { secret in it.content || secret in it.patch.orEmpty() })
+    }
+
+    @Test
+    fun `collects removed file as patch only evidence`() = runTest {
+        val github = EdgeCaseCollectorGitHub(
+            content = null,
+            patch = "@@ -1,2 +0,0 @@\n-@Composable fun LegacyScreen()\n-old behavior",
+            status = "removed",
+        )
+
+        val context = ContextCollector(github, maxFiles = 1, maxBytes = 1_000).collect(
+            github.repository,
+            github.pullRequest,
+            requireNotNull(RubricLoader.find(MODULE_THREE_ID)),
+        )
+
+        assertEquals("removed", context.files.single().status)
+        assertEquals("", context.files.single().content)
+        assertTrue("LegacyScreen" in context.files.single().patch.orEmpty())
+        assertTrue(context.skippedFiles.isEmpty())
     }
 }
 
@@ -134,6 +155,7 @@ private class ArchitectureCollectorGitHub : GitHubService {
 private class EdgeCaseCollectorGitHub(
     private val content: String?,
     private val patch: String?,
+    private val status: String = "modified",
 ) : GitHubService {
     val repository = "owner/repository"
     val path = "app/src/main/UserListScreen.kt"
@@ -142,7 +164,7 @@ private class EdgeCaseCollectorGitHub(
 
     override suspend fun getPullRequest(repository: String, number: Int) = pullRequest
     override suspend fun listChangedFiles(repository: String, number: Int) =
-        listOf(ChangedFile(path, "modified", patch))
+        listOf(ChangedFile(path, status, patch))
     override suspend fun listRepositoryPaths(repository: String, ref: String) = emptyList<String>()
     override suspend fun getFileContent(repository: String, path: String, ref: String) = content
     override suspend fun collaboratorPermission(repository: String, username: String) = "read"
