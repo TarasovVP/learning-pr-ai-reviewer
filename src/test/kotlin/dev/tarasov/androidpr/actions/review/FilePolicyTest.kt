@@ -9,6 +9,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SEVEN_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_EIGHT_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_NINE_ID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -131,6 +132,24 @@ class FilePolicyTest {
         assertTrue(FilePolicy.isModuleContext("app/src/test/UserRefreshPerformanceTest.kt", MODULE_EIGHT_ID))
         assertFalse(FilePolicy.isModuleContext("app/src/main/data/local/UserDao.kt", MODULE_EIGHT_ID))
         assertFalse(FilePolicy.isModuleContext("docs/openapi.yaml", MODULE_EIGHT_ID))
+    }
+
+    @Test
+    fun `recognizes module nine feature guidance skill rule and report context`() {
+        assertTrue(FilePolicy.isModuleContext("AGENTS.md", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isModuleContext("docs/agentic-task.md", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isModuleContext("docs/agentic-workflow-report.md", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isModuleContext(".gemini/rules/plan-before-edit.md", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isModuleContext(".agents/skills/android-feature-validation/SKILL.md", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isModuleContext("docs/mcp-readonly-result.md", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isAllowed("docs/mcp-readonly-result.md"))
+        assertFalse(FilePolicy.isAllowed("config/mcp.json"))
+        assertFalse(FilePolicy.isAllowed("config/mcp-settings.toml"))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/data/local/UserDatabase.kt", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/main/feature/users/details/UserDetailsViewModel.kt", MODULE_NINE_ID))
+        assertTrue(FilePolicy.isModuleContext("app/src/androidTest/UserDatabaseMigrationTest.kt", MODULE_NINE_ID))
+        assertFalse(FilePolicy.isModuleContext("docs/openapi.yaml", MODULE_NINE_ID))
+        assertFalse(FilePolicy.isModuleContext("app/src/main/core/quality/JankMonitoring.kt", MODULE_NINE_ID))
     }
 
     @Test

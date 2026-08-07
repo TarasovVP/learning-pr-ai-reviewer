@@ -13,6 +13,7 @@ import dev.tarasov.androidpr.actions.rubric.MODULE_FIVE_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SIX_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_SEVEN_ID
 import dev.tarasov.androidpr.actions.rubric.MODULE_EIGHT_ID
+import dev.tarasov.androidpr.actions.rubric.MODULE_NINE_ID
 
 class ContextCollector(
     private val github: GitHubService,
@@ -63,8 +64,8 @@ object FilePolicy {
         setOf(BUILD, GRADLE_CACHE, IDEA, GENERATED, CAPTURES, SCREENSHOTS)
     private val sensitiveBaseNames = setOf(SECRET, SECRETS, CREDENTIAL, CREDENTIALS)
     private val sensitiveFragments =
-        setOf(KEYSTORE, PRIVATE_KEY_DASH, PRIVATE_KEY_UNDERSCORE, POSTMAN_ENVIRONMENT)
-    private val potentiallySensitiveConfigExtensions = setOf(PROPERTIES, JSON, YAML, YML)
+        setOf(KEYSTORE, PRIVATE_KEY_DASH, PRIVATE_KEY_UNDERSCORE, POSTMAN_ENVIRONMENT, MCP)
+    private val potentiallySensitiveConfigExtensions = setOf(PROPERTIES, TOML, JSON, YAML, YML)
     private val moduleThreeFileNames = setOf(
         "userlistscreen.kt",
         "userlistviewmodel.kt",
@@ -321,6 +322,53 @@ object FilePolicy {
         MONITORING,
         TELEMETRY,
     )
+    private val moduleNineExactPaths = setOf(
+        SETTINGS_GRADLE,
+        ROOT_BUILD_GRADLE,
+        APP_BUILD_GRADLE,
+        VERSION_CATALOG,
+        README,
+        AGENTS_FILE,
+        AGENTIC_TASK,
+        AGENTIC_WORKFLOW_REPORT,
+    )
+    private val moduleNineFileNames = setOf(
+        USER_DATABASE,
+        ENTITIES,
+        USER_DAO,
+        USER_LOCAL_SOURCE,
+        ROOM_USER_LOCAL_SOURCE,
+        REPOSITORIES,
+        USER_REPOSITORY,
+        USER_USE_CASES,
+        MODELS,
+        APP_MODULE,
+        APP_NAVIGATION,
+        DESTINATIONS,
+        USER_DETAILS_VIEW_MODEL,
+        USER_LIST_VIEW_MODEL,
+        USER_LIST_SCREEN,
+        USER_DATABASE_MIGRATION_TEST,
+        ROOM_USER_DAO_TEST,
+        USER_REPOSITORY_TEST,
+        USER_LIST_FILTERING_TEST,
+        USER_LIST_VIEW_MODEL_TEST,
+        USER_DETAILS_VIEW_MODEL_TEST,
+        USER_SCREENS_TEST,
+        SKILL_FILE,
+    )
+    private val moduleNinePathFragments = setOf(
+        AGENTIC,
+        RECENTLY_VIEWED,
+        RECENTLY_VIEWED_UNDERSCORE,
+        AGENT_SKILLS_PATH,
+        SKILLS_PATH,
+        RULES_PATH,
+        GEMINI_PATH,
+        MCP,
+        ANDROID_CLI,
+        ANDROID_CLI_UNDERSCORE,
+    )
 
     fun isAllowed(path: String): Boolean {
         val normalized = path.lowercase()
@@ -345,6 +393,7 @@ object FilePolicy {
         MODULE_SIX_ID -> isModuleSixContext(path)
         MODULE_SEVEN_ID -> isModuleSevenContext(path)
         MODULE_EIGHT_ID -> isModuleEightContext(path)
+        MODULE_NINE_ID -> isModuleNineContext(path)
         else -> false
     }
 
@@ -405,6 +454,13 @@ object FilePolicy {
         val name = normalized.substringAfterLast(PATH_SEPARATOR)
         if (normalized in moduleEightExactPaths || name in moduleEightFileNames) return true
         return moduleEightPathFragments.any(normalized::contains)
+    }
+
+    private fun isModuleNineContext(path: String): Boolean {
+        val normalized = path.lowercase()
+        val name = normalized.substringAfterLast(PATH_SEPARATOR)
+        if (normalized in moduleNineExactPaths || name in moduleNineFileNames) return true
+        return moduleNinePathFragments.any(normalized::contains)
     }
 
     private const val KT = "kt"
@@ -578,6 +634,24 @@ object FilePolicy {
     private const val CRASHLYTICS = "crashlytics"
     private const val MONITORING = "monitoring"
     private const val TELEMETRY = "telemetry"
+    private const val AGENTS_FILE = "agents.md"
+    private const val AGENTIC_TASK = "docs/agentic-task.md"
+    private const val AGENTIC_WORKFLOW_REPORT = "docs/agentic-workflow-report.md"
+    private const val USER_LOCAL_SOURCE = "userlocaldatasource.kt"
+    private const val USER_DATABASE_MIGRATION_TEST = "userdatabasemigrationtest.kt"
+    private const val ROOM_USER_DAO_TEST = "roomuserdaotest.kt"
+    private const val USER_DETAILS_VIEW_MODEL_TEST = "userdetailsviewmodeltest.kt"
+    private const val SKILL_FILE = "skill.md"
+    private const val AGENTIC = "agentic"
+    private const val RECENTLY_VIEWED = "recentlyviewed"
+    private const val RECENTLY_VIEWED_UNDERSCORE = "recently_viewed"
+    private const val AGENT_SKILLS_PATH = "/agent-skills/"
+    private const val SKILLS_PATH = "/skills/"
+    private const val RULES_PATH = "/rules/"
+    private const val GEMINI_PATH = ".gemini/"
+    private const val MCP = "mcp"
+    private const val ANDROID_CLI = "android-cli"
+    private const val ANDROID_CLI_UNDERSCORE = "android_cli"
     private const val EMPTY = ""
     private const val UNDERSCORE = "_"
     private const val PATH_SEPARATOR = '/'
