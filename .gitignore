@@ -1,11 +1,15 @@
+.idea/
 .gradle/
 .kotlin/
 build/
-.idea/
+gradle/
 *.iml
 .env
 local.properties
 *.pem
 *.key
 secrets/
-gradle/gradle-daemon-jvm.properties
+__pycache__/
+*.py[cod]
+review-context/
+review-result.json
