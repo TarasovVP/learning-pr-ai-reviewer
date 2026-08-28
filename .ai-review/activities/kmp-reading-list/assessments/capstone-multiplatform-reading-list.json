@@ -1,0 +1,36 @@
+{
+  "title": "Capstone. Multiplatform Reading List",
+  "version": 1,
+  "criteria": [
+    {
+      "id": "shared-architecture",
+      "title": "Shared architecture and source-set boundaries",
+      "description": "Reusable domain and data behavior is placed in appropriate shared source sets, platform integrations remain target-specific, and dependencies point through clear interfaces rather than platform application code."
+    },
+    {
+      "id": "network-and-mapping",
+      "title": "Remote data and model mapping",
+      "description": "Ktor Client retrieves book data from a public API, transport models are mapped deliberately, and failures are represented without leaking transport details into domain behavior."
+    },
+    {
+      "id": "persistence-and-offline-behavior",
+      "title": "Persistence and offline behavior",
+      "description": "SQLDelight stores the reading list and relevant cached data, and the repository implements a clear fallback policy for unavailable or failed network requests."
+    },
+    {
+      "id": "dependency-composition",
+      "title": "Dependency composition",
+      "description": "Shared and platform-specific dependencies are composed explicitly through constructors or an appropriate multiplatform DI framework without hidden global state."
+    },
+    {
+      "id": "targets-and-user-states",
+      "title": "Target integration and user states",
+      "description": "The repository contains credible entry points for Android, iOS, Desktop, and Web, and the UI represents loading, empty, content, and recoverable error states. Runtime execution claims may be reported as not verifiable by static review."
+    },
+    {
+      "id": "shared-tests",
+      "title": "Shared behavior tests",
+      "description": "Focused tests cover successful loading, remote failure with stored data, empty results, and persistence of reading-list changes using controlled test doubles or fixtures."
+    }
+  ]
+}
