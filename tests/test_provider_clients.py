@@ -22,7 +22,7 @@ class ProviderClientsTest(unittest.TestCase):
     def test_anthropic_parses_structured_text(self) -> None:
         transport = lambda *_: {"content": [{"type": "text", "text": json.dumps(RESULT)}]}
         with TemporaryDirectory() as directory:
-            result = AnthropicClient("secret", "model", transport).review(
+            result = AnthropicClient("secret", "model", "medium", transport).review(
                 "system", "user", {"type": "object"}, self.tools(directory)
             )
         self.assertEqual("Complete", result["summary"])

@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "scripts"))
 
-from publish_review import render_review
+from publish_review import render_failure, render_review
 
 
 class PublishReviewTest(unittest.TestCase):
@@ -20,6 +20,11 @@ class PublishReviewTest(unittest.TestCase):
         self.assertIn("<!-- learning-pr-ai-reviewer:abc -->", rendered)
         self.assertIn("Advisory result: PASSED", rendered)
         self.assertIn("qualified human reviewer", rendered)
+
+    def test_failure_marker_does_not_match_completed_fingerprint(self) -> None:
+        rendered = render_failure({"fingerprint": "abc"}, "https://example.test/run", "timeout")
+        self.assertIn("learning-pr-ai-reviewer-error:abc", rendered)
+        self.assertNotIn("learning-pr-ai-reviewer:abc", rendered)
 
 
 if __name__ == "__main__":

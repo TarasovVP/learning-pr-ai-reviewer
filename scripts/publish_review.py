@@ -13,6 +13,7 @@ from review_result import validate_review
 
 
 MARKER_PREFIX = "<!-- learning-pr-ai-reviewer:"
+ANY_MARKER_PREFIX = "<!-- learning-pr-ai-reviewer"
 LABELS = {
     "PASSED": ("ai-review/passed", "2da44e"),
     "PASSED WITH NOTES": ("ai-review/passed-with-notes", "bf8700"),
@@ -91,7 +92,7 @@ def render_review(
 def render_failure(metadata: dict[str, Any], run_url: str, detail: str) -> str:
     return "\n".join(
         [
-            f"{MARKER_PREFIX}{metadata['fingerprint']} -->",
+            f"<!-- learning-pr-ai-reviewer-error:{metadata['fingerprint']} -->",
             "## Automated learning submission review",
             "",
             "The reviewer could not produce a valid assessment report.",
@@ -106,7 +107,7 @@ def render_failure(metadata: dict[str, Any], run_url: str, detail: str) -> str:
 def upsert_comment(api: GitHubApi, repository: str, number: int, body: str) -> None:
     comments = api.paginate(f"/repos/{repository}/issues/{number}/comments")
     existing = next(
-        (comment for comment in comments if MARKER_PREFIX in comment.get("body", "")),
+        (comment for comment in comments if ANY_MARKER_PREFIX in comment.get("body", "")),
         None,
     )
     if existing:

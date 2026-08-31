@@ -1,0 +1,35 @@
+name: Learning AI Review
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    if: >-
+      (github.event_name == 'pull_request_target' && github.event.pull_request.draft == false) ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       github.event.comment.body == '/ai-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Review learning submission
+        uses: TarasovVP/learning-pr-ai-reviewer@REVIEWER_COMMIT_SHA
+        with:
+          repository: ${{ github.repository }}
+          pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
+          activity_id: kmp-reading-list
+          trigger: ${{ github.event_name == 'issue_comment' && 'manual' || github.event.action }}
+          requested_by: ${{ github.event_name == 'issue_comment' && github.actor || '' }}
+          provider: anthropic
+          model: ${{ vars.AI_MODEL }}
+          github_token: ${{ github.token }}
+          ai_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

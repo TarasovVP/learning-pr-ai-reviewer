@@ -37,9 +37,16 @@ def parse_json_text(text: str) -> dict[str, Any]:
 
 
 class AnthropicClient:
-    def __init__(self, api_key: str, model: str, transport: JsonTransport = http_json) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        reasoning_effort: str = "medium",
+        transport: JsonTransport = http_json,
+    ) -> None:
         self.api_key = api_key
         self.model = model
+        self.reasoning_effort = reasoning_effort
         self.transport = transport
 
     def review(
@@ -58,7 +65,6 @@ class AnthropicClient:
                 {
                     "x-api-key": self.api_key,
                     "anthropic-version": "2023-06-01",
-                    "anthropic-beta": "structured-outputs-2025-11-13",
                 },
                 {
                     "model": self.model,
@@ -67,6 +73,7 @@ class AnthropicClient:
                     "messages": messages,
                     "tools": TOOL_SPECS,
                     "output_config": {
+                        "effort": self.reasoning_effort,
                         "format": {"type": "json_schema", "schema": schema}
                     },
                 },
@@ -119,7 +126,7 @@ class OpenAIClient:
                 "name": tool["name"],
                 "description": tool["description"],
                 "parameters": tool["input_schema"],
-                "strict": True,
+                "strict": False,
             }
             for tool in TOOL_SPECS
         ]
@@ -180,6 +187,7 @@ class OpenAIClient:
                 )
             payload = {
                 "model": self.model,
+                "instructions": system,
                 "previous_response_id": response["id"],
                 "input": outputs,
                 "tools": self._tools(),
@@ -192,7 +200,7 @@ class OpenAIClient:
 
 def create_client(provider: str, api_key: str, model: str, reasoning_effort: str) -> Any:
     if provider == "anthropic":
-        return AnthropicClient(api_key, model)
+        return AnthropicClient(api_key, model, reasoning_effort)
     if provider == "openai":
         return OpenAIClient(api_key, model, reasoning_effort)
     raise ValueError("AI_PROVIDER must be anthropic or openai")
