@@ -1,0 +1,81 @@
+id: capstone-multiplatform-reading-list
+version: 1.0.0
+title: Capstone. Multiplatform Reading List
+description: Assess a public Kotlin Multiplatform reading-list application across shared architecture, data behavior, target integration, and focused tests.
+relatedPaths:
+  - "**/*"
+requirements:
+  - id: shared-architecture
+    title: Shared architecture and source-set boundaries
+    criteria:
+      - Reusable domain and data behavior is located in suitable shared source sets.
+      - Platform-specific code is limited to integrations that genuinely differ by target.
+      - Dependencies point through explicit interfaces rather than platform application code.
+    acceptableEvidence:
+      - Source-set and module structure.
+      - Shared interfaces, implementations, dependency declarations, and composition roots.
+    statusRules:
+      MET: Shared and platform-specific responsibilities have clear, consistently applied boundaries.
+      PARTIAL: The main boundary exists, but an important reusable responsibility remains platform-bound or coupled.
+      NOT_MET: Shared logic is absent or depends directly on platform application code contrary to the assignment.
+      NOT_VERIFIABLE: The relevant boundary cannot be established from the available static evidence.
+  - id: network-and-mapping
+    title: Remote data and model mapping
+    criteria:
+      - Ktor Client retrieves book data from a public HTTP API.
+      - Transport representations are mapped deliberately and failures do not leak transport details into domain behavior.
+    acceptableEvidence:
+      - HTTP client configuration, remote data source, serialization models, mapping code, and repository call sites.
+    statusRules:
+      MET: Remote retrieval and mapping are implemented through clear shared boundaries with explicit failure handling.
+      PARTIAL: Remote retrieval works structurally, but mapping or failure isolation is incomplete.
+      NOT_MET: The required Ktor-based remote data flow is absent or bypasses the shared boundary.
+      NOT_VERIFIABLE: Runtime communication with the selected service cannot be established through static evidence.
+  - id: persistence-and-offline-behavior
+    title: Persistence and offline behavior
+    criteria:
+      - SQLDelight stores the reading list and relevant cached data.
+      - The repository defines a clear fallback policy when current remote data is unavailable.
+    acceptableEvidence:
+      - SQLDelight schema and queries, driver factories, local data source, repository orchestration, and state mapping.
+    statusRules:
+      MET: Persistence and offline fallback are implemented coherently across the shared data flow.
+      PARTIAL: Persistence exists, but the fallback policy or repository coordination is incomplete.
+      NOT_MET: Required local persistence or offline behavior is absent.
+      NOT_VERIFIABLE: Device-specific persistence behavior cannot be established from static evidence.
+  - id: dependency-composition
+    title: Dependency composition
+    criteria:
+      - Shared and platform-specific dependencies are composed explicitly without hidden global state.
+      - Platform implementations are supplied at clear composition boundaries.
+    acceptableEvidence:
+      - Constructors, modules, factories, Koin definitions, and target entry-point wiring.
+    statusRules:
+      MET: Dependency ownership and platform binding are explicit and consistently applied.
+      PARTIAL: Composition is mostly explicit, but an important dependency is still hidden or globally accessed.
+      NOT_MET: Core behavior relies on uncontrolled global service lookup or lacks a usable composition boundary.
+      NOT_VERIFIABLE: Runtime dependency resolution cannot be established from static evidence.
+  - id: targets-and-user-states
+    title: Target integration and user states
+    criteria:
+      - The repository contains credible entry points for Android, iOS, Desktop, and Web.
+      - The interface represents loading, empty, content, and recoverable error states.
+    acceptableEvidence:
+      - Target configuration, platform entry points, shared or native UI state models, and rendered state branches.
+    statusRules:
+      MET: All target entry points and required UI states have concrete implementation evidence.
+      PARTIAL: Most targets and states are represented, but an important target or required state is incomplete.
+      NOT_MET: Multiple required targets or the required state handling are absent.
+      NOT_VERIFIABLE: Successful runtime execution on a target cannot be established by static review.
+  - id: shared-tests
+    title: Shared behavior tests
+    criteria:
+      - Focused tests cover successful loading, remote failure with stored data, empty results, and persistence of reading-list changes.
+      - Test dependencies are controlled through explicit doubles or fixtures.
+    acceptableEvidence:
+      - Shared test sources, fakes, fixtures, assertions, and test configuration.
+    statusRules:
+      MET: All required shared behaviors have focused tests with controlled dependencies.
+      PARTIAL: Useful tests exist, but at least one required behavior or important assertion is missing.
+      NOT_MET: Focused shared tests are absent or do not exercise the required behaviors.
+      NOT_VERIFIABLE: Test execution results cannot be established from static evidence alone.

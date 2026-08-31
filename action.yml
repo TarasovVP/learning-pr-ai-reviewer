@@ -1,25 +1,25 @@
 name: Learning PR AI Reviewer
-description: Evidence-based AI review for practical learning assignments
+description: Preliminary advisory review of a practical learning Pull Request
 
 inputs:
   repository:
-    description: Repository that owns the Pull Request
+    description: Repository containing the Pull Request
     required: true
   pr_number:
     description: Pull Request number
     required: true
   activity_id:
-    description: Trusted learning activity identifier
+    description: Trusted catalog ID for the learning activity
     required: true
   review_scope:
     description: full_submission or pull_request_changes
     required: false
     default: full_submission
   trigger:
-    description: opened, ready_for_review, reopened, or manual
+    description: opened, ready_for_review, or manual
     required: true
   requested_by:
-    description: Login that requested a manual review
+    description: GitHub login that requested the review
     required: false
     default: ""
   provider:
@@ -30,15 +30,19 @@ inputs:
     description: Model identifier accepted by the selected provider
     required: true
   reasoning_effort:
-    description: Provider-specific reasoning effort
+    description: Provider reasoning effort
     required: false
     default: medium
-  close_submission:
-    description: Close the Pull Request before reading submission evidence
+  max_files:
+    description: Emergency file-count ceiling after filtering
     required: false
-    default: "true"
+    default: "5000"
+  max_total_bytes:
+    description: Emergency text-size ceiling after filtering
+    required: false
+    default: "52428800"
   github_token:
-    description: Short-lived token from the caller repository
+    description: Caller repository token used for Pull Request API operations
     required: true
   ai_api_key:
     description: API key for the selected AI provider
@@ -47,67 +51,94 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Validate configuration
+    - name: Verify caller configuration
       shell: bash
       env:
-        REVIEW_GITHUB_TOKEN: ${{ inputs.github_token }}
-        REVIEW_AI_KEY: ${{ inputs.ai_api_key }}
+        AI_API_KEY: ${{ inputs.ai_api_key }}
+        CALLER_GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
-        test -n "$REVIEW_GITHUB_TOKEN" || { echo "github_token is required"; exit 1; }
-        test -n "$REVIEW_AI_KEY" || { echo "ai_api_key is required"; exit 1; }
+        test -n "$AI_API_KEY" || { echo "AI provider key is unavailable."; exit 1; }
+        test -n "$CALLER_GITHUB_TOKEN" || { echo "The caller GitHub token is unavailable."; exit 1; }
 
-    - name: Protect submission Pull Request
-      if: inputs.close_submission == 'true'
+    - name: Protect parent repository from accidental merge
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         REVIEW_REPOSITORY: ${{ inputs.repository }}
         PR_NUMBER: ${{ inputs.pr_number }}
-        REVIEW_TRIGGER: ${{ inputs.trigger }}
-        REVIEW_REQUESTED_BY: ${{ inputs.requested_by }}
         REVIEWER_ROOT: ${{ github.action_path }}
-      run: python3 "$REVIEWER_ROOT/scripts/protect_submission.py"
+      run: python3 "$REVIEWER_ROOT/scripts/protect_submission_pr.py"
 
-    - name: Prepare review context
+    - name: Prepare trusted and untrusted review context
       id: context
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
+        EXPECTED_REPOSITORY: ${{ github.repository }}
         REVIEW_REPOSITORY: ${{ inputs.repository }}
         PR_NUMBER: ${{ inputs.pr_number }}
         ACTIVITY_ID: ${{ inputs.activity_id }}
-        REVIEW_SCOPE: ${{ inputs.review_scope }}
-        REVIEW_TRIGGER: ${{ inputs.trigger }}
-        REVIEW_REQUESTED_BY: ${{ inputs.requested_by }}
         REVIEWER_ROOT: ${{ github.action_path }}
-        REVIEW_CONTEXT: ${{ runner.temp }}/learning-pr-review-context
-      run: python3 "$REVIEWER_ROOT/scripts/prepare_context.py"
+        REVIEWER_SHA: ${{ github.action_ref }}
+        REVIEW_SCOPE: ${{ inputs.review_scope }}
+        MAX_FILES: ${{ inputs.max_files }}
+        MAX_TOTAL_BYTES: ${{ inputs.max_total_bytes }}
+        OUTPUT_DIRECTORY: review-context
+      run: python3 "$REVIEWER_ROOT/scripts/prepare_pr_context.py"
 
-    - name: Run structured AI review
-      id: review
+    - name: Build reviewer instructions
+      id: instructions
       if: steps.context.outputs.ready == 'true'
       shell: bash
       env:
+        REVIEWER_ROOT: ${{ github.action_path }}
+        REVIEW_REPOSITORY: ${{ inputs.repository }}
+        ACTIVITY_ID: ${{ inputs.activity_id }}
+        PR_NUMBER: ${{ inputs.pr_number }}
+        REVIEW_SCOPE: ${{ inputs.review_scope }}
+        REVIEW_TRIGGER: ${{ inputs.trigger }}
+        REQUESTED_BY: ${{ inputs.requested_by }}
+      run: |
+        INSTRUCTIONS_FILE="$RUNNER_TEMP/learning-pr-ai-reviewer-instructions.md"
+        {
+          cat "$REVIEWER_ROOT/prompts/review.md"
+          echo
+          echo "Review repository: $REVIEW_REPOSITORY"
+          echo "Learning activity: $ACTIVITY_ID"
+          echo "Pull Request: #$PR_NUMBER"
+          echo "Review scope: $REVIEW_SCOPE"
+          echo "Trigger: $REVIEW_TRIGGER"
+          echo "Requested by: $REQUESTED_BY"
+        } > "$INSTRUCTIONS_FILE"
+        echo "instructions_file=$INSTRUCTIONS_FILE" >> "$GITHUB_OUTPUT"
+
+    - name: Run structured AI review
+      id: ai
+      if: steps.context.outputs.ready == 'true'
+      shell: bash
+      env:
+        REVIEWER_ROOT: ${{ github.action_path }}
         AI_PROVIDER: ${{ inputs.provider }}
         AI_API_KEY: ${{ inputs.ai_api_key }}
-        AI_MODEL: ${{ inputs.model }}
-        AI_REASONING_EFFORT: ${{ inputs.reasoning_effort }}
-        REVIEWER_ROOT: ${{ github.action_path }}
-        REVIEW_CONTEXT: ${{ runner.temp }}/learning-pr-review-context
-        REVIEW_OUTPUT: ${{ runner.temp }}/learning-pr-review.json
-      run: python3 "$REVIEWER_ROOT/scripts/run_review.py"
+        REVIEW_MODEL: ${{ inputs.model }}
+        REASONING_EFFORT: ${{ inputs.reasoning_effort }}
+        REVIEW_PROMPT_FILE: ${{ steps.instructions.outputs.instructions_file }}
+        REVIEW_CONTEXT: review-context
+        REVIEW_OUTPUT: ai-review.json
+      run: python3 "$REVIEWER_ROOT/scripts/run_ai_review.py"
 
-    - name: Publish advisory result
+    - name: Publish advisory review
       if: always()
       shell: bash
       env:
+        REVIEWER_ROOT: ${{ github.action_path }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
         REVIEW_REPOSITORY: ${{ inputs.repository }}
         PR_NUMBER: ${{ inputs.pr_number }}
-        REVIEWER_ROOT: ${{ github.action_path }}
-        REVIEW_CONTEXT: ${{ runner.temp }}/learning-pr-review-context
-        REVIEW_OUTPUT: ${{ runner.temp }}/learning-pr-review.json
         REVIEW_PROVIDER: ${{ inputs.provider }}
         REVIEW_MODEL: ${{ inputs.model }}
+        REVIEW_FILE: ${{ steps.ai.outputs.review_file }}
+        CONTEXT_MANIFEST: review-context/manifest.json
+        CONTEXT_DIAGNOSTIC: review-context/diagnostic.md
         WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: python3 "$REVIEWER_ROOT/scripts/publish_review.py"

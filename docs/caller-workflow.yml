@@ -2,7 +2,7 @@ name: Learning AI Review
 
 on:
   pull_request_target:
-    types: [opened, ready_for_review, reopened]
+    types: [opened, ready_for_review]
   issue_comment:
     types: [created]
 
@@ -12,24 +12,52 @@ permissions:
   issues: write
 
 jobs:
-  review:
-    if: >-
-      (github.event_name == 'pull_request_target' && github.event.pull_request.draft == false) ||
-      (github.event_name == 'issue_comment' &&
-       github.event.issue.pull_request &&
-       github.event.comment.body == '/ai-review')
+  automatic-review:
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    concurrency:
+      group: learning-ai-review-${{ github.repository }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     steps:
-      - name: Review learning submission
+      - name: Run learning AI review
         uses: TarasovVP/learning-pr-ai-reviewer@REVIEWER_COMMIT_SHA
         with:
           repository: ${{ github.repository }}
-          pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
+          pr_number: ${{ github.event.pull_request.number }}
           activity_id: kmp-reading-list
-          trigger: ${{ github.event_name == 'issue_comment' && 'manual' || github.event.action }}
-          requested_by: ${{ github.event_name == 'issue_comment' && github.actor || '' }}
+          review_scope: full_submission
           provider: anthropic
           model: ${{ vars.AI_MODEL }}
+          reasoning_effort: medium
+          trigger: ${{ github.event.action }}
+          requested_by: ${{ github.actor }}
           github_token: ${{ github.token }}
-          ai_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          ai_api_key: ${{ secrets.AI_API_KEY }}
+
+  manual-review:
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      github.event.comment.body == '/ai-review' &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: learning-ai-review-${{ github.repository }}-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    steps:
+      - name: Run learning AI review
+        uses: TarasovVP/learning-pr-ai-reviewer@REVIEWER_COMMIT_SHA
+        with:
+          repository: ${{ github.repository }}
+          pr_number: ${{ github.event.issue.number }}
+          activity_id: kmp-reading-list
+          review_scope: full_submission
+          provider: anthropic
+          model: ${{ vars.AI_MODEL }}
+          reasoning_effort: medium
+          trigger: manual
+          requested_by: ${{ github.actor }}
+          github_token: ${{ github.token }}
+          ai_api_key: ${{ secrets.AI_API_KEY }}

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 import base64
+import json
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -19,14 +19,20 @@ class GitHubApi:
         self.token = token
         self.api_root = api_root.rstrip("/")
 
-    def request(self, method: str, path: str, payload: Any | None = None) -> Any:
+    def request_bytes(
+        self,
+        method: str,
+        path: str,
+        payload: Any | None = None,
+        accept: str = "application/vnd.github+json",
+    ) -> bytes:
         data = None if payload is None else json.dumps(payload).encode()
         request = urllib.request.Request(
             f"{self.api_root}{path}",
             data=data,
             method=method,
             headers={
-                "Accept": "application/vnd.github+json",
+                "Accept": accept,
                 "Authorization": f"Bearer {self.token}",
                 "Content-Type": "application/json",
                 "User-Agent": "learning-pr-ai-reviewer",
@@ -35,11 +41,14 @@ class GitHubApi:
         )
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
-                body = response.read()
-                return json.loads(body) if body else None
+                return response.read()
         except urllib.error.HTTPError as error:
             detail = error.read().decode(errors="replace")
             raise GitHubApiError(error.code, path, detail[:500]) from error
+
+    def request(self, method: str, path: str, payload: Any | None = None) -> Any:
+        body = self.request_bytes(method, path, payload)
+        return json.loads(body) if body else None
 
     def get(self, path: str) -> Any:
         return self.request("GET", path)

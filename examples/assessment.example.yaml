@@ -1,0 +1,19 @@
+id: code-quality
+version: 1.0.0
+title: Code Quality
+description: Assess whether the submission has clear responsibilities and maintainable boundaries.
+relatedPaths:
+  - "**/*"
+requirements:
+  - id: separation-of-concerns
+    title: Separation of concerns
+    criteria:
+      - Distinct responsibilities are separated into clear components or modules.
+      - Dependencies between responsibilities are explicit and follow the assignment constraints.
+    acceptableEvidence:
+      - Source structure, interfaces, dependency declarations, and relevant call sites.
+    statusRules:
+      MET: Responsibilities and dependencies are clearly separated with concrete implementation evidence.
+      PARTIAL: A useful separation exists, but an important responsibility or dependency remains mixed.
+      NOT_MET: Responsibilities required to be separate by the assignment remain coupled.
+      NOT_VERIFIABLE: The relevant behavior cannot be established from the available static evidence.

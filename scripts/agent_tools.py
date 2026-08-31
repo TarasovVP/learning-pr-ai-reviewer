@@ -1,89 +1,33 @@
 from __future__ import annotations
 
 import fnmatch
-import re
-from pathlib import Path
+import copy
+import os
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
-class ReadOnlyTools:
-    def __init__(self, context_root: Path) -> None:
-        self.context_root = context_root.resolve()
-        self.files_root = (self.context_root / "submission" / "files").resolve()
-
-    def _resolve(self, relative: str) -> Path:
-        candidate = (self.files_root / relative).resolve()
-        if candidate != self.files_root and self.files_root not in candidate.parents:
-            raise ValueError("Path is outside the submission directory")
-        if not candidate.is_file():
-            raise ValueError(f"Submission file does not exist: {relative}")
-        return candidate
-
-    def list_files(self, pattern: str = "*") -> dict[str, Any]:
-        files = [
-            path.relative_to(self.files_root).as_posix()
-            for path in self.files_root.rglob("*")
-            if path.is_file()
-        ]
-        matches = [path for path in sorted(files) if fnmatch.fnmatch(path, pattern)]
-        return {"files": matches[:2000], "truncated": len(matches) > 2000}
-
-    def read_file(self, path: str, start_line: int = 1, end_line: int = 400) -> dict[str, Any]:
-        if start_line < 1 or end_line < start_line or end_line - start_line > 799:
-            raise ValueError("Requested line range is invalid or too large")
-        lines = self._resolve(path).read_text(encoding="utf-8").splitlines()
-        selected = lines[start_line - 1 : end_line]
-        numbered = [f"{number}: {line}" for number, line in enumerate(selected, start_line)]
-        return {"path": path, "content": "\n".join(numbered), "total_lines": len(lines)}
-
-    def search_text(self, query: str, path_pattern: str = "*") -> dict[str, Any]:
-        if not query or len(query) > 200:
-            raise ValueError("Search query must contain 1-200 characters")
-        expression = re.compile(re.escape(query), re.IGNORECASE)
-        results: list[dict[str, Any]] = []
-        for relative in self.list_files(path_pattern)["files"]:
-            for number, line in enumerate(self._resolve(relative).read_text(encoding="utf-8").splitlines(), 1):
-                if expression.search(line):
-                    results.append({"path": relative, "line": number, "text": line[:500]})
-                    if len(results) == 200:
-                        return {"matches": results, "truncated": True}
-        return {"matches": results, "truncated": False}
-
-    def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        if name == "list_files":
-            return self.list_files(str(arguments.get("pattern", "*")))
-        if name == "read_file":
-            return self.read_file(
-                str(arguments["path"]),
-                int(arguments.get("start_line", 1)),
-                int(arguments.get("end_line", 400)),
-            )
-        if name == "search_text":
-            return self.search_text(
-                str(arguments["query"]), str(arguments.get("path_pattern", "*"))
-            )
-        raise ValueError(f"Unknown tool: {name}")
+MAX_READ_LINES = 400
+MAX_TOOL_OUTPUT_CHARS = 60_000
 
 
-TOOL_SPECS = [
+GENERIC_TOOL_SPECS: list[dict[str, Any]] = [
     {
         "name": "list_files",
-        "description": "List submission files matching a glob pattern.",
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {"pattern": {"type": "string"}},
+        "description": "List regular files inside review-context using a case-sensitive glob. Use **/* to list everything. Returns at most 500 paths.",
+        "schema": {
+            "type": "object", "additionalProperties": False, "required": ["pattern"],
+            "properties": {"pattern": {"type": "string", "minLength": 1}},
         },
     },
     {
         "name": "read_file",
-        "description": "Read a bounded line range from one submission file.",
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["path"],
+        "description": f"Read an inclusive line range from one UTF-8 file inside review-context. At most {MAX_READ_LINES} lines are returned.",
+        "schema": {
+            "type": "object", "additionalProperties": False,
+            "required": ["path", "start_line", "end_line"],
             "properties": {
-                "path": {"type": "string"},
+                "path": {"type": "string", "minLength": 1},
                 "start_line": {"type": "integer", "minimum": 1},
                 "end_line": {"type": "integer", "minimum": 1},
             },
@@ -91,15 +35,112 @@ TOOL_SPECS = [
     },
     {
         "name": "search_text",
-        "description": "Search case-insensitively for literal text in submission files.",
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["query"],
+        "description": "Search for literal case-insensitive text in UTF-8 review-context files and return exact path:line evidence.",
+        "schema": {
+            "type": "object", "additionalProperties": False,
+            "required": ["query", "pattern", "max_results"],
             "properties": {
-                "query": {"type": "string"},
-                "path_pattern": {"type": "string"},
+                "query": {"type": "string", "minLength": 1, "maxLength": 200},
+                "pattern": {"type": "string", "minLength": 1},
+                "max_results": {"type": "integer", "minimum": 1, "maximum": 100},
             },
         },
     },
 ]
+
+
+def openai_tools() -> list[dict[str, Any]]:
+    return [
+        {"type": "function", "name": item["name"], "description": item["description"], "strict": True, "parameters": item["schema"]}
+        for item in GENERIC_TOOL_SPECS
+    ]
+
+
+def anthropic_tools() -> list[dict[str, Any]]:
+    return [
+        {"name": item["name"], "description": item["description"], "strict": True, "input_schema": anthropic_schema(item["schema"])}
+        for item in GENERIC_TOOL_SPECS
+    ]
+
+
+def anthropic_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Return the strict JSON Schema subset currently accepted by Claude."""
+    result = copy.deepcopy(schema)
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            for unsupported in ("minLength", "maxLength", "minimum", "maximum", "maxItems"):
+                value.pop(unsupported, None)
+            if isinstance(value.get("minItems"), int) and value["minItems"] > 1:
+                value["minItems"] = 1
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(result)
+    return result
+
+
+def truncate(value: str) -> str:
+    if len(value) <= MAX_TOOL_OUTPUT_CHARS:
+        return value
+    return value[:MAX_TOOL_OUTPUT_CHARS] + "\n[tool output truncated]"
+
+
+class ReadOnlyReviewTools:
+    def __init__(self, root: Path) -> None:
+        self.root = root.resolve()
+        if not self.root.is_dir():
+            raise ValueError(f"Review context does not exist: {root}")
+
+    def _path(self, relative: str) -> Path:
+        candidate = PurePosixPath(relative)
+        if candidate.is_absolute() or ".." in candidate.parts:
+            raise ValueError("Path must remain inside review-context")
+        resolved = (self.root / Path(*candidate.parts)).resolve()
+        if os.path.commonpath((str(self.root), str(resolved))) != str(self.root):
+            raise ValueError("Path resolves outside review-context")
+        if not resolved.is_file() or resolved.is_symlink():
+            raise ValueError(f"Not a readable regular file: {relative}")
+        return resolved
+
+    def _files(self, pattern: str) -> list[tuple[str, Path]]:
+        files: list[tuple[str, Path]] = []
+        for path in sorted(self.root.rglob("*")):
+            if not path.is_file() or path.is_symlink():
+                continue
+            relative = path.relative_to(self.root).as_posix()
+            if pattern in {"*", "**", "**/*"} or fnmatch.fnmatchcase(relative, pattern):
+                files.append((relative, path))
+        return files
+
+    def call(self, name: str, arguments: dict[str, Any]) -> str:
+        if name == "list_files":
+            files = self._files(str(arguments["pattern"]))
+            output = [relative for relative, _ in files[:500]]
+            if len(files) > 500:
+                output.append(f"[truncated: {len(files) - 500} additional files]")
+            return "\n".join(output) or "[no matching files]"
+        if name == "read_file":
+            path = self._path(str(arguments["path"]))
+            start = int(arguments["start_line"])
+            end = int(arguments["end_line"])
+            if start < 1 or end < start:
+                raise ValueError("Invalid line range")
+            end = min(end, start + MAX_READ_LINES - 1)
+            lines = path.read_text(encoding="utf-8").splitlines()[start - 1 : end]
+            return truncate("\n".join(f"{number}: {line}" for number, line in enumerate(lines, start)) or "[requested range is empty]")
+        if name == "search_text":
+            query = str(arguments["query"]).casefold()
+            limit = int(arguments["max_results"])
+            matches: list[str] = []
+            for relative, path in self._files(str(arguments["pattern"])):
+                for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                    if query in line.casefold():
+                        matches.append(f"{relative}:{number}: {line}")
+                        if len(matches) >= limit:
+                            return truncate("\n".join(matches))
+            return truncate("\n".join(matches) or "[no matches]")
+        raise ValueError(f"Unknown tool: {name}")
